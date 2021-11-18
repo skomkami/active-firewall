@@ -1,8 +1,12 @@
 import curses
 
 from main.main_menu import MainMenu
+from config.config import AppConfig, readConf
+from arguments.read_args import getArgs
+
 
 def main(stdscr):
+  config = readConf(getArgs()['config_file'] or 'config.json')
   curses.curs_set(0)
   curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
   curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -10,6 +14,10 @@ def main(stdscr):
   currentRow = 0
 
   menusPath = []
+  # stdscr.addstr(1, 1, str(config.dosModuleConf.maxPackets))
+  # import time
+  # stdscr.refresh()
+  # time.sleep(1)
 
   currentMenu = MainMenu(stdscr)
   currentMenu.show(currentRow)

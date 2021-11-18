@@ -1,0 +1,20 @@
+{
+    "dosModuleConf": {
+        "enabled": false,
+        "maxPackets": 5000,
+        "maxDataKB": 1000,
+        "periodicity": {
+            "unit": "Second",
+            "multiplier": 2
+        }
+    },
+    "bfModuleConf": {
+        "enabled": false,
+        "maxTriesPerAddress": 100,
+        "maxTriesTotal": 1000,
+        "periodicity": {
+            "unit": "Hour",
+            "multiplier": 1
+        }
+    }
+}
