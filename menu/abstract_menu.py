@@ -10,7 +10,7 @@ class AbstractMenu(ABC):
   def title(self):
     return "Abstract Menu"
 
-  #it should return entered submenu or None (then app should return to parent menu)
+  # it should return entered submenu or None (then app should return to parent menu)
   @abstractclassmethod
   def handleAction(self, selectedRow):
     return None
