@@ -1,9 +1,16 @@
 from re import findall
 from dataclasses import dataclass, field
+from enum import Enum
 from subprocess import check_output, CalledProcessError
+from platform import system
 
-from typing import Optional
 from time import sleep
+from typing import Optional
+
+
+class LinuxParameters(Enum):
+    LOG_FILE_PATH = '/var/log/auth.log'
+    GET_LOGS_COMMAND = "awk '/^{from_date}.*/,/$1>=start/' {file_path} | grep -a 'Failed password for'"
 
 
 @dataclass
@@ -23,13 +30,23 @@ class IPInfo:
 
 
 class LogParser:
-    log_file_path = '/var/log/auth.log'
-    init_command = "cat /var/log/auth.log | grep -a 'Failed password for'"
-    default_command = "awk '/^{from_date}.*/,/$1>=start/' {file_path} | grep -a 'Failed password for'"
 
-    def __init__(self):
+    def __init__(self, delay: float = 0.5):
+        self.delay = delay
         self.parsed_logs = dict()
-        self.delay = 0.5
+        self.parameters = self.get_os_parameters()
+        self.log_file_path = self.parameters.LOG_FILE_PATH.value
+        self.get_logs_command = self.parameters.GET_LOGS_COMMAND.value
+
+    @staticmethod
+    def get_os_parameters():
+        _os = system()
+        if _os == 'Linux':
+            parameters = LinuxParameters
+        else:
+            raise OSError(f'Log parser is not able to be ran on {_os} system.')
+
+        return parameters
 
     @staticmethod
     def run_terminal_command(command: str) -> Optional[str]:
@@ -67,11 +84,9 @@ class LogParser:
             self.parsed_logs[ip].ports_attempted.add(self.get_log_port(log))
 
     def run(self) -> None:
-        previous_log_timestamp = None
-        command = self.init_command
+        previous_log_timestamp = ''
         while True:
-            if previous_log_timestamp:
-                command = self.default_command.format(from_date=previous_log_timestamp, file_path=self.log_file_path)
+            command = self.get_logs_command.format(from_date=previous_log_timestamp, file_path=self.log_file_path)
             response = self.run_terminal_command(command)
             logs = response.split('\n')
             if len(logs) <= 1:
