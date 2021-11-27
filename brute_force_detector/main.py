@@ -1,4 +1,4 @@
-from ssh_login_detector.log_parsers import LogParser
+from ssh_login_detector.log_parser import LogParser
 from config.config import BruteForceModuleConf
 
 
