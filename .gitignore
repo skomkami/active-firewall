@@ -115,6 +115,9 @@ env.bak/
 venv.bak/
 active-firewall/
 
+# Pycharm .idea directory
+.idea/
+
 # Spyder project settings
 .spyderproject
 .spyproject
