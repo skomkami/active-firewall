@@ -1,11 +1,13 @@
 from re import findall
 from dataclasses import dataclass, field
 from enum import Enum
-from subprocess import check_output, CalledProcessError
+from subprocess import Popen, PIPE
 from platform import system
-
 from time import sleep
-from typing import Optional
+
+
+class ErrorMessages(Enum):
+    INVALID_OS_MSG = 'Log parser is not able to be ran on {_os} system.'
 
 
 class LinuxParameters(Enum):
@@ -34,29 +36,26 @@ class LogParser:
     def __init__(self, delay: float = 0.5):
         self.delay = delay
         self.parsed_logs = dict()
-        self.parameters = self.get_os_parameters()
-        self.log_file_path = self.parameters.LOG_FILE_PATH.value
-        self.get_logs_command = self.parameters.GET_LOGS_COMMAND.value
+        self.log_file_path, self.get_logs_command = self.get_path_and_command()
 
     @staticmethod
-    def get_os_parameters():
+    def get_path_and_command() -> tuple[str, str]:
         _os = system()
         if _os == 'Linux':
             parameters = LinuxParameters
         else:
-            raise OSError(f'Log parser is not able to be ran on {_os} system.')
+            raise OSError(ErrorMessages.INVALID_OS_MSG.value.format(_os=_os))
 
-        return parameters
+        return parameters.LOG_FILE_PATH.value, parameters.GET_LOGS_COMMAND.value
 
     @staticmethod
-    def run_terminal_command(command: str) -> Optional[str]:
-        try:
-            response = check_output(command, shell=True, encoding="utf-8").strip()
-        except CalledProcessError:
-            # Command did not return anything.
-            response = ''
+    def run_terminal_command(command: str) -> str:
+        pipe = Popen(command, shell=True, stdout=PIPE, stderr=PIPE, encoding="utf-8")
+        response, error = pipe.communicate()
+        if error:
+            raise SyntaxError(error)
 
-        return response
+        return response.strip()
 
     @staticmethod
     def get_log_timestamp(log: str) -> str:
@@ -75,7 +74,7 @@ class LogParser:
 
         return attempts_number
 
-    def parse_logs(self, logs: list):
+    def parse_logs(self, logs: list) -> None:
         for log in logs:
             [ip] = findall(r'[0-9]+(?:\.[0-9]+){3}', log)
             self.parsed_logs.setdefault(ip, IPInfo(ip))
