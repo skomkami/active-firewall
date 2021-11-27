@@ -1,12 +1,7 @@
-To install jsonpickle use command:
+In order to install all dependencies required run command posted down below in terminal.
 
 ```bash
-pip install jsonpickle
-```
-To install scapy with pip use commands:
-
-```bash
-pip install --pre scapy[basic]
+pip install -r requirements.txt
 ```
 
 Usage:
