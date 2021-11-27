@@ -32,11 +32,11 @@ timeforsniff=options.usertime
 global threewayhandshake,waiting,fullscandb,halfscandb,xmasscandb,nullscandb,finscandb,scannedports,blacklist
 
 blacklist = []
-fullscandb = {}
+# fullscandb = {}
 halfscandb = {}
-xmasscandb = {}
-nullscandb = {}
-finscandb = {}
+# xmasscandb = {}
+# nullscandb = {}
+# finscandb = {}
 waiting = []
 threewayhandshake = []
 scannedports = {}
@@ -67,15 +67,15 @@ def convert(dec):
 #     if (netice >= vaxt):
 #         return True
 
-def show_ports(signum, frm):
-    for ips in scannedports:
-        for single in scannedports[ips]:
-            while(scannedports[ips].count(single)!=1):
-                scannedports[ips].remove(single)
-    print("\n\n")
-    for ip in blacklist:
-        if str(ip) in scannedports and ip != LANip:
-            print("Attacker from ip " + ip + " scanned ["+ ",".join(scannedports[ip]) + "] ports.")
+# def show_ports(signum, frm):
+#     for ips in scannedports:
+#         for single in scannedports[ips]:
+#             while(scannedports[ips].count(single)!=1):
+#                 scannedports[ips].remove(single)
+#     print("\n\n")
+#     for ip in blacklist:
+#         if str(ip) in scannedports and ip != LANip:
+#             print("Attacker from ip " + ip + " scanned ["+ ",".join(scannedports[ip]) + "] ports.")
 
 # https://www.guru99.com/tcp-3-way-handshake.html
 def threewaycheck(sip,dip,sport,dport,seqnum,acknum,flags):
@@ -117,76 +117,76 @@ def scancheck(sip, dip, sport, dport, seqnum, acknum, flags):
             print(returned)
         else:
             print(bgcolors.BOLD+bgcolors.OKBLUE+revthreeway+bgcolors.ENDC+bgcolors.WARNING+bgcolors.BOLD+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!"+bgcolors.ENDC)
-    elif full_open_result := fullconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
-        returned = full_open_result
-        if(isinstance(returned,(str))):
-            print (returned)
-        else:
-            print(bgcolors.BOLD+bgcolors.OKBLUE+revthreeway+bgcolors.ENDC+bgcolors.WARNING+bgcolors.BOLD+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!"+bgcolors.ENDC)
-    elif (xmasscan(sip,dip,sport,dport,seqnum,acknum,flags)):
-        print(bgcolors.BOLD+bgcolors.OKBLUE+dataforthreewaycheck+bgcolors.ENDC +bgcolors.BOLD+bgcolors.FAIL+ " => [Runtime Detection:] XMAS scan detected!"+bgcolors.ENDC)
-    elif (finscan(sip,dip,sport,dport,seqnum,acknum,flags)):
-        print(bgcolors.BOLD+bgcolors.OKBLUE+ dataforthreewaycheck+bgcolors.ENDC+ bgcolors.BOLD+bgcolors.FAIL+" => [Runtime Detection:] FIN scan detected!"+bgcolors.ENDC)
-    elif (nullscan(sip,dip,sport,dport,seqnum,acknum,flags)):
-        print(bgcolors.BOLD+bgcolors.OKBLUE+dataforthreewaycheck +bgcolors.ENDC+bgcolors.BOLD+bgcolors.FAIL+ " => [Runtime Detection:] NULL scan detected!"+bgcolors.ENDC)
+    # elif full_open_result := fullconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
+    #     returned = full_open_result
+    #     if(isinstance(returned,(str))):
+    #         print (returned)
+    #     else:
+    #         print(bgcolors.BOLD+bgcolors.OKBLUE+revthreeway+bgcolors.ENDC+bgcolors.WARNING+bgcolors.BOLD+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!"+bgcolors.ENDC)
+    # elif (xmasscan(sip,dip,sport,dport,seqnum,acknum,flags)):
+    #     print(bgcolors.BOLD+bgcolors.OKBLUE+dataforthreewaycheck+bgcolors.ENDC +bgcolors.BOLD+bgcolors.FAIL+ " => [Runtime Detection:] XMAS scan detected!"+bgcolors.ENDC)
+    # elif (finscan(sip,dip,sport,dport,seqnum,acknum,flags)):
+    #     print(bgcolors.BOLD+bgcolors.OKBLUE+ dataforthreewaycheck+bgcolors.ENDC+ bgcolors.BOLD+bgcolors.FAIL+" => [Runtime Detection:] FIN scan detected!"+bgcolors.ENDC)
+    # elif (nullscan(sip,dip,sport,dport,seqnum,acknum,flags)):
+    #     print(bgcolors.BOLD+bgcolors.OKBLUE+dataforthreewaycheck +bgcolors.ENDC+bgcolors.BOLD+bgcolors.FAIL+ " => [Runtime Detection:] NULL scan detected!"+bgcolors.ENDC)
 
-def fullconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
-    if dip in scannedports:
-        scannedports[dip].append(str(sport))
-    else:
-        scannedports[dip] = []
-        scannedports[dip].append(str(sport))
+# def fullconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
+#     if dip in scannedports:
+#         scannedports[dip].append(str(sport))
+#     else:
+#         scannedports[dip] = []
+#         scannedports[dip].append(str(sport))
     
-    if(dataforthreewaycheck in threewayhandshake):
-        if("ACK" in flags and "RST" in flags and len(flags)==2):
-            if dbdata in fullscandb:
-                counter = int(fullscandb[dbdata])
-                if(counter>=3):
+#     if(dataforthreewaycheck in threewayhandshake):
+#         if("ACK" in flags and "RST" in flags and len(flags)==2):
+#             if dbdata in fullscandb:
+#                 counter = int(fullscandb[dbdata])
+#                 if(counter>=3):
                     
-                    if(str(dip) not in blacklist):
-                        blacklist.append(str(dip))
-                    return bgcolors.BOLD+bgcolors.OKBLUE+ dip+":"+str(dport)+"->"+sip+":"+str(sport)+bgcolors.ENDC+ bgcolors.BOLD+bgcolors.FAIL+" => [Runtime Detection:] Full connect scan detected!"+bgcolors.ENDC				
-                else:
-                    counter = counter + 1
-                    fullscandb[dbdata] = str(counter)
-            else:
-                counter = 0
-                fullscandb[dbdata] = str(counter)
+#                     if(str(dip) not in blacklist):
+#                         blacklist.append(str(dip))
+#                     return bgcolors.BOLD+bgcolors.OKBLUE+ dip+":"+str(dport)+"->"+sip+":"+str(sport)+bgcolors.ENDC+ bgcolors.BOLD+bgcolors.FAIL+" => [Runtime Detection:] Full connect scan detected!"+bgcolors.ENDC				
+#                 else:
+#                     counter = counter + 1
+#                     fullscandb[dbdata] = str(counter)
+#             else:
+#                 counter = 0
+#                 fullscandb[dbdata] = str(counter)
                 
-    else:
-        if("SYN" in flags and len(flags)==1):
-            if(seqnum>0 and acknum==0):
-                fullscandb[dbdata+"_SYN"] = str(seqnum)+"_"+str(acknum)+"_"+str(sport)+"_"+str(dport)
+#     else:
+#         if("SYN" in flags and len(flags)==1):
+#             if(seqnum>0 and acknum==0):
+#                 fullscandb[dbdata+"_SYN"] = str(seqnum)+"_"+str(acknum)+"_"+str(sport)+"_"+str(dport)
                 
-        elif("RST" in flags and "ACK" in flags and len(flags)==2):
-            tmp = dip+"->"+sip+"_SYN"
-            if tmp in fullscandb:
-                manage = fullscandb[dip+"->"+sip+"_SYN"]
-                pieces = manage.split("_")
-                old_acknum = int(pieces[1])
-                old_seqnum = int(pieces[0])
-                if(seqnum==0 and acknum==old_seqnum+1):
-                    if dbdata in fullscandb:
-                        counter = int(fullscandb[dbdata])
-                        if(counter>=3):
+#         elif("RST" in flags and "ACK" in flags and len(flags)==2):
+#             tmp = dip+"->"+sip+"_SYN"
+#             if tmp in fullscandb:
+#                 manage = fullscandb[dip+"->"+sip+"_SYN"]
+#                 pieces = manage.split("_")
+#                 old_acknum = int(pieces[1])
+#                 old_seqnum = int(pieces[0])
+#                 if(seqnum==0 and acknum==old_seqnum+1):
+#                     if dbdata in fullscandb:
+#                         counter = int(fullscandb[dbdata])
+#                         if(counter>=3):
                             
-                            if(str(dip) not in blacklist):
-                                blacklist.append(str(dip))
-                            return True
-                        else:
-                            counter = counter + 1
-                            fullscandb[dbdata] = str(counter)
-                    else:
-                        counter = 0
-                        fullscandb[dbdata] = str(counter)
-    return False			
+#                             if(str(dip) not in blacklist):
+#                                 blacklist.append(str(dip))
+#                             return True
+#                         else:
+#                             counter = counter + 1
+#                             fullscandb[dbdata] = str(counter)
+#                     else:
+#                         counter = 0
+#                         fullscandb[dbdata] = str(counter)
+#     return False			
 
 def halfconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
-    if dip in scannedports:
-        scannedports[dip].append(str(sport))
-    else:
-        scannedports[dip] = []
-        scannedports[dip].append(str(sport))
+    # if dip in scannedports:
+    #     scannedports[dip].append(str(sport))
+    # else:
+    #     scannedports[dip] = []
+    #     scannedports[dip].append(str(sport))
     
     if("SYN" in flags and seqnum>0 and acknum==0 and len(flags)==1):
         halfscandb[dbdata+"_"+str(seqnum)] = dbdata+"_SYN_ACK_"+str(seqnum)+"_"+str(acknum)
@@ -212,60 +212,60 @@ def halfconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
             return bgcolors.BOLD+bgcolors.OKBLUE+sip+":"+str(sport)+"->"+dip+":"+str(dport) +bgcolors.ENDC+ bgcolors.BOLD+bgcolors.FAIL+" => [Runtime Detection:] Half connect(SYN scan) scan detected!"+bgcolors.ENDC
     return False
 
-def xmasscan(sip,dip,sport,dport,seqnum,acknum,flags):
-    if dip in scannedports:
-        scannedports[dip].append(str(sport))
-    else:
-        scannedports[dip] = []
-        scannedports[dip].append(str(sport))
+# def xmasscan(sip,dip,sport,dport,seqnum,acknum,flags):
+#     if dip in scannedports:
+#         scannedports[dip].append(str(sport))
+#     else:
+#         scannedports[dip] = []
+#         scannedports[dip].append(str(sport))
     
-    if("FIN" in flags and "URG" in flags and "PSH" in flags and len(flags)==3):
+#     if("FIN" in flags and "URG" in flags and "PSH" in flags and len(flags)==3):
         
-        if(str(sip) not in blacklist):	
-            blacklist.append(str(sip))
-        return True
-    return False
+#         if(str(sip) not in blacklist):	
+#             blacklist.append(str(sip))
+#         return True
+#     return False
 
-def finscan(sip,dip,sport,dport,seqnum,acknum,flags):
-    if dip in scannedports:
-        scannedports[dip].append(str(sport))
-    else:
-        scannedports[dip] = []
-        scannedports[dip].append(str(sport))
+# def finscan(sip,dip,sport,dport,seqnum,acknum,flags):
+#     if dip in scannedports:
+#         scannedports[dip].append(str(sport))
+#     else:
+#         scannedports[dip] = []
+#         scannedports[dip].append(str(sport))
     
-    if(dataforthreewaycheck not in threewayhandshake):
-        if("FIN" in flags and len(flags)==1):			
-            if(str(sip) not in blacklist):	
-                blacklist.append(str(sip))
-            return True
-    return False
+#     if(dataforthreewaycheck not in threewayhandshake):
+#         if("FIN" in flags and len(flags)==1):			
+#             if(str(sip) not in blacklist):	
+#                 blacklist.append(str(sip))
+#             return True
+#     return False
 
-def nullscan(sip,dip,sport,dport,seqnum,acknum,flags):
-    if dip in scannedports:
-        scannedports[dip].append(str(sport))
-    else:
-        scannedports[dip] = []
-        scannedports[dip].append(str(sport))
-    if(len(flags)==0):
-        if(str(sip) not in blacklist):	
-            blacklist.append(str(sip))
-        return True
-    return False
+# def nullscan(sip,dip,sport,dport,seqnum,acknum,flags):
+#     if dip in scannedports:
+#         scannedports[dip].append(str(sport))
+#     else:
+#         scannedports[dip] = []
+#         scannedports[dip].append(str(sport))
+#     if(len(flags)==0):
+#         if(str(sip) not in blacklist):	
+#             blacklist.append(str(sip))
+#         return True
+#     return False
 
-def ackscan(sip,dip,sport,dport,seqnum,acknum,flags):
-    if dip in scannedports:
-        scannedports[dip].append(str(sport))
-    else:
-        scannedports[dip] = []
-        scannedports[dip].append(str(sport))
+# def ackscan(sip,dip,sport,dport,seqnum,acknum,flags):
+#     if dip in scannedports:
+#         scannedports[dip].append(str(sport))
+#     else:
+#         scannedports[dip] = []
+#         scannedports[dip].append(str(sport))
 
-    if(dataforthreewaycheck not in threewayhandshake):
-        if("ACK" in flags and len(flags)==1):
+#     if(dataforthreewaycheck not in threewayhandshake):
+#         if("ACK" in flags and len(flags)==1):
             
-            if(str(sip) not in blacklist):	
-                blacklist.append(str(sip))
-            return True
-    return False
+#             if(str(sip) not in blacklist):	
+#                 blacklist.append(str(sip))
+#             return True
+#     return False
 
 
 if(os.name=='nt'):
@@ -344,7 +344,7 @@ while True:
                 threewaycheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
 
             scancheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
-            try:
-                signal.signal(signal.SIGINT,show_ports)	   
-            except:
-                pass
+            # try:
+            #     signal.signal(signal.SIGINT,show_ports)	   
+            # except:
+            #     pass
