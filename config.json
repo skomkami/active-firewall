@@ -9,11 +9,11 @@
         }
     },
     "bfModuleConf": {
-        "enabled": false,
-        "maxTriesPerAddress": 100,
-        "maxTriesTotal": 1000,
+        "enabled": true,
+        "frequency": 100,
+        "attemptLimit": 100,
         "periodicity": {
-            "unit": "Hour",
+            "unit": "Second",
             "multiplier": 1
         }
     }

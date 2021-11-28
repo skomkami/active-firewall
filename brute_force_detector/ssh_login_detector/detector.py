@@ -31,10 +31,11 @@ class IPInfo:
                f'Address is suspicious: {"yes" if self.suspicious_address else "no"}\n'
 
 
-class LogParser:
+class SSHLoginDetector:
 
-    def __init__(self, delay: float = 0.5):
-        self.delay = delay
+    def __init__(self, frequency: int = 20, attempt_limit: int = 10):
+        self.delay = 1/frequency
+        self.attempt_limit = attempt_limit
         self.parsed_logs = dict()
         self.log_file_path, self.get_logs_command = self.get_path_and_command()
 
@@ -82,6 +83,10 @@ class LogParser:
             self.parsed_logs[ip].timestamps.append(self.get_log_timestamp(log))
             self.parsed_logs[ip].ports_attempted.add(self.get_log_port(log))
 
+            # If attempts number per addres reached limit then ip should be blocked.
+            if self.parsed_logs[ip].attempts_number >= self.attempt_limit:
+                self.parsed_logs[ip].suspicious_address = True
+
     def run(self) -> None:
         previous_log_timestamp = ''
         while True:
@@ -95,5 +100,7 @@ class LogParser:
             if previous_log_timestamp:
                 logs = logs[1:]
             previous_log_timestamp = self.get_log_timestamp(logs[-1])
+            with open('ssh_login_attempts', 'a') as f:
+                print(self.parsed_logs, file=f)
             self.parse_logs(logs)
             sleep(self.delay)

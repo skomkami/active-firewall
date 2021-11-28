@@ -1,7 +1,9 @@
-from enum import Enum
-import jsonpickle
 import json
+import jsonpickle
+
 from copy import deepcopy
+from enum import Enum
+
 
 class PeriodicityUnit(Enum):
     Second = 'Second'
@@ -9,49 +11,57 @@ class PeriodicityUnit(Enum):
     Hour = 'Hour'
     Day = 'Day'
 
-class Periodicity(object):
+
+class Periodicity:
     unit = PeriodicityUnit.Minute
     multiplier = 1
 
-class DoSModuleConf(object):
+
+class DoSModuleConf:
     enabled = True
     maxPackets = 1000
     maxDataKB = 1000
     periodicity = Periodicity()
 
-class BruteForceModuleConf(object):
+
+class BruteForceModuleConf:
     enabled = True
-    maxTriesPerAddress = 100
-    maxTriesTotal = 10000
+    frequency = 100
+    attemptLimit = 100
     periodicity = Periodicity()
 
-class PortScannerModuleConf(object):
+
+class PortScannerModuleConf:
     enabled = True
     blockAfterTries = 3
 
-class AppConfig(object):
+
+class AppConfig:
     dosModuleConf = DoSModuleConf()
     bfModuleConf = BruteForceModuleConf()
     portScannerConf = PortScannerModuleConf()
 
-def readConf(path = 'config.json') -> AppConfig:
-    #handle changed path to config file
-    #default location is ./config.json
-    #jsonpickle requires type informations so we need to inject them into config
+
+def readConf(path='config.json') -> AppConfig:
+    # handle changed path to config file
+    # default location is ./config.json
+    # jsonpickle requires type informations so we need to inject them into config
     configTypesInfoDict = {
-        "py/object": "config.config.AppConfig", 
-        "dosModuleConf": {"py/object": "config.config.DoSModuleConf"}, 
+        "py/object": "config.config.AppConfig",
+        "dosModuleConf": {"py/object": "config.config.DoSModuleConf"},
         "bfModuleConf": {"py/object": "config.config.BruteForceModuleConf"},
         "portScannerConf": {"py/object": "config.config.PortScannerModuleConf"}
     }
     try:
         with open(path, 'r') as file:
             dictionary = json.load(file)
-            enrichedDict = dict_of_dicts_merge(configTypesInfoDict, dictionary)  # python >= 3.5 <3.9 : {**dictionary, **configTypesInfoDict}
+            enrichedDict = dict_of_dicts_merge(configTypesInfoDict,
+                                               dictionary)  # python >= 3.5 <3.9 : {**dictionary, **configTypesInfoDict}
             enrichedJson = json.dumps(enrichedDict)
             return jsonpickle.decode(enrichedJson)
     except FileNotFoundError:
         return AppConfig()
+
 
 def dict_of_dicts_merge(x, y):
     z = {}
