@@ -13,4 +13,4 @@ class TraficMenu(AbstractMenu):
         return None
 
     def title(self):
-        return "Trafic menu"
+        return "Traffic menu"

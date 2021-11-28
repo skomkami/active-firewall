@@ -26,6 +26,12 @@ def runProcesses(config: AppConfig) -> List[Process]:
 
     return [portScanningDetectionProc, dosModuleProc, bruteForceProc]
 
+def terminate_processes(processes: list) -> list:
+    for process in processes:
+        if process != None:
+            process.terminate()
+
+    return processes
 
 def main(stdscr):
     config = readConf(getArgs()['config_file'] or 'config.json')
@@ -48,17 +54,17 @@ def main(stdscr):
     while 1:
         key = stdscr.getch()
         if key == curses.KEY_UP:
-            currentRow += 1
-        elif key == curses.KEY_DOWN:
             currentRow -= 1
+        elif key == curses.KEY_DOWN:
+            currentRow += 1
         elif key == curses.KEY_ENTER or key in [10, 13]:
             newMenu = currentMenu.handleAction(currentRow)
-            if newMenu == None and len(menusPath) > 0:
+            if newMenu == currentMenu:
+                pass
+            elif newMenu == None and len(menusPath) > 0:
                 currentMenu = menusPath.pop()
             elif newMenu == None:
-                for process in processes:
-                    if process != None:
-                        process.terminate()
+                terminate_processes(processes)
                 break
             else:
                 menusPath.append(currentMenu)

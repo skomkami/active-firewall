@@ -1,18 +1,19 @@
 import curses
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 
 
 class AbstractMenu(ABC):
-    @abstractclassmethod
+
+    @abstractmethod
     def menuOptions(self):
         return []
 
-    @abstractclassmethod
+    @abstractmethod
     def title(self):
         return "Abstract Menu"
 
     # it should return entered submenu or None (then app should return to parent menu)
-    @abstractclassmethod
+    @abstractmethod
     def handleAction(self, selectedRow):
         return None
 

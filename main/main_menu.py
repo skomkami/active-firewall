@@ -12,7 +12,7 @@ class MainMenu(AbstractMenu):
         self.stdscr = stdscr
 
     def handleAction(self, selectedRow):
-        if selectedRow % len(self.menuOptions()) == 0:
+        if selectedRow == 0:
             return TraficMenu(self.stdscr)
         else:
             return None

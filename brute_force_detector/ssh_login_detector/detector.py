@@ -100,5 +100,7 @@ class SSHLoginDetector:
             if previous_log_timestamp:
                 logs = logs[1:]
             previous_log_timestamp = self.get_log_timestamp(logs[-1])
+            with open('ssh_login_attempts', 'a') as f:
+                print(self.parsed_logs, file=f)
             self.parse_logs(logs)
             sleep(self.delay)

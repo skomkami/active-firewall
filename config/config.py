@@ -12,12 +12,12 @@ class PeriodicityUnit(Enum):
     Day = 'Day'
 
 
-class Periodicity(object):
+class Periodicity:
     unit = PeriodicityUnit.Minute
     multiplier = 1
 
 
-class DoSModuleConf(object):
+class DoSModuleConf:
     enabled = True
     maxPackets = 1000
     maxDataKB = 1000
@@ -31,12 +31,12 @@ class BruteForceModuleConf:
     periodicity = Periodicity()
 
 
-class PortScannerModuleConf(object):
+class PortScannerModuleConf:
     enabled = True
     blockAfterTries = 3
 
 
-class AppConfig(object):
+class AppConfig:
     dosModuleConf = DoSModuleConf()
     bfModuleConf = BruteForceModuleConf()
     portScannerConf = PortScannerModuleConf()
