@@ -22,7 +22,7 @@ print("-" * 50)
 try:
 	
 	# will scan ports between 1 to 65,535
-	for port in range(1,65535):
+	for port in range(65532,65535):
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		socket.setdefaulttimeout(1)
 		
