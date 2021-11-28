@@ -1,9 +1,9 @@
-from ssh_login_detector.log_parser import LogParser
+from ssh_login_detector.detector import SSHLoginDetector
 from config.config import BruteForceModuleConf
 
 
 def main() -> None:
-    detector = LogParser()
+    detector = SSHLoginDetector()
     detector.run()
     print('Done!')
 
