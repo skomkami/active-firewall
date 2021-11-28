@@ -1,8 +1,20 @@
 import curses
-
+from typing import List
 from main.main_menu import MainMenu
 from config.config import AppConfig, readConf
 from arguments.read_args import getArgs
+from scanning.port_scanning_detector import portScanningDetection
+from multiprocessing import Process
+
+def runProcesses(config: AppConfig) -> List[Process]:
+  portScanningDetectionProc = None
+  dosModuleProc = None
+  bruteForceProc = None
+  if config.portScannerConf.enabled:
+    portScanningDetectionProc = Process(target=portScanningDetection, args=())
+    portScanningDetectionProc.start()
+
+  return [portScanningDetectionProc, dosModuleProc, bruteForceProc]
 
 
 def main(stdscr):
@@ -18,6 +30,8 @@ def main(stdscr):
   # import time
   # stdscr.refresh()
   # time.sleep(1)
+  processes = runProcesses(config)
+
 
   currentMenu = MainMenu(stdscr)
   currentMenu.show(currentRow)
@@ -33,6 +47,9 @@ def main(stdscr):
       if newMenu == None and len(menusPath) > 0:
         currentMenu = menusPath.pop()
       elif newMenu == None:
+        for process in processes:
+          if process != None:
+            process.terminate()
         break
       else:
         menusPath.append(currentMenu)

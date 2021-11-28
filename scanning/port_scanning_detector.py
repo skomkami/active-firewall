@@ -10,26 +10,33 @@ import optparse
 #define ETH_P_ALL    0x0003
 
 
-class bgcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+# class bgcolors:
+#     HEADER = '\033[95m'
+#     OKBLUE = '\033[94m'
+#     OKGREEN = '\033[92m'
+#     WARNING = '\033[93m'
+#     FAIL = '\033[91m'
+#     ENDC = '\033[0m'
+#     BOLD = '\033[1m'
+#     UNDERLINE = '\033[4m'
 
-parser = optparse.OptionParser("usage: %prog -t <time for sniff in minutes>")
-parser.add_option('-t','--time',dest='usertime',type='int', help='Time to sniff network in minutes (Use 0 for infinite wait)')
-(options,args) = parser.parse_args()
+# parser = optparse.OptionParser("usage: %prog -t <time for sniff in minutes>")
+# parser.add_option('-t','--time',dest='usertime',type='int', help='Time to sniff network in minutes (Use 0 for infinite wait)')
+# (options,args) = parser.parse_args()
 
-if (options.usertime == None):
-    print(parser.usage)
-    sys.exit(0)
-timeforsniff=options.usertime
+# if (options.usertime == None):
+#     print(parser.usage)
+#     sys.exit(0)
+# timeforsniff=options.usertime
 
 global threewayhandshake,waiting,fullscandb,halfscandb,xmasscandb,nullscandb,finscandb,scannedports,blacklist
+
+fileName = "test.txt"
+
+def writeDetection(str):
+    with open(fileName, 'a') as file:
+        file.write(str)
+        file.write('\n')
 
 blacklist = []
 # fullscandb = {}
@@ -42,11 +49,11 @@ threewayhandshake = []
 scannedports = {}
 
 
-process = subprocess.Popen(['/sbin/ifconfig'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-out, err = process.communicate()
+# process = subprocess.Popen(['/sbin/ifconfig'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# out, err = process.communicate()
 # previously with commands module: 
 #  --> LANip = commands.getoutput("/sbin/ifconfig").split("\n")[1].split()[1][5:]
-LANip = out.decode("utf-8").split("\n")[2].split(" ")[1] # works with macOS Big Sur
+# LANip = out.decode("utf-8").split("\n")[2].split(" ")[1] # works with macOS Big Sur
 
 
 def convert(dec):
@@ -114,9 +121,11 @@ def scancheck(sip, dip, sport, dport, seqnum, acknum, flags):
     if half_open_result:
         returned = half_open_result
         if (isinstance(returned,(str))):
-            print(returned)
+            # print(returned)
+            writeDetection(returned)
         else:
-            print(bgcolors.BOLD+bgcolors.OKBLUE+revthreeway+bgcolors.ENDC+bgcolors.WARNING+bgcolors.BOLD+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!"+bgcolors.ENDC)
+            writeDetection(revthreeway+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!")
+            # print(bgcolors.BOLD+bgcolors.OKBLUE+revthreeway+bgcolors.ENDC+bgcolors.WARNING+bgcolors.BOLD+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!"+bgcolors.ENDC)
     # elif full_open_result := fullconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
     #     returned = full_open_result
     #     if(isinstance(returned,(str))):
@@ -209,7 +218,8 @@ def halfconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
             if(str(dip) not in blacklist):
                 blacklist.append(str(dip))
         
-            return bgcolors.BOLD+bgcolors.OKBLUE+sip+":"+str(sport)+"->"+dip+":"+str(dport) +bgcolors.ENDC+ bgcolors.BOLD+bgcolors.FAIL+" => [Runtime Detection:] Half connect(SYN scan) scan detected!"+bgcolors.ENDC
+            # return bgcolors.BOLD+bgcolors.OKBLUE+sip+":"+str(sport)+"->"+dip+":"+str(dport) +bgcolors.ENDC+ bgcolors.BOLD+bgcolors.FAIL+" => [Runtime Detection:] Half connect(SYN scan) scan detected!"+bgcolors.ENDC
+            return sip+":"+str(sport)+"->"+dip+":"+str(dport) +" => [Runtime Detection:] Half connect(SYN scan) scan detected!"
     return False
 
 # def xmasscan(sip,dip,sport,dport,seqnum,acknum,flags):
@@ -282,69 +292,69 @@ except AttributeError:
     print("[*]Windows OS doesn't support AF_PACKET.")
     sys.exit()
   
-protocol_numb = {"1":"ICMP","6":"TCP","17":"UDP"}
+# protocol_numb = {"1":"ICMP","6":"TCP","17":"UDP"}
 
-# print (header)
-print (bgcolors.BOLD+bgcolors.OKGREEN)
-print ("-"*55)
-print ("Port Scanner Detector v1")
-print ("-"*55)
-print ("Packet Capturing Started...")
-print ("-"*55)
-print ("")
-print (bgcolors.ENDC)
+# print (bgcolors.BOLD+bgcolors.OKGREEN)
+# print ("-"*55)
+# print ("Port Scanner Detector v1")
+# print ("-"*55)
+# print ("Packet Capturing Started...")
+# print ("-"*55)
+# print ("")
+# print (bgcolors.ENDC)
 
-while True:
-    try:
-        # https://en.wikipedia.org/wiki/File:Ethernet_Type_II_Frame_format.svg
-        # wielkość buffera
-        packet = s.recv(65565)
-        eth_length = 14
-        eth_header = packet[:eth_length]
-        # 6s - 6 bytes
-        # H - unsigned short (2 bytes)
-        eth = unpack('! 6s 6s H' , eth_header)
-        # ether_type in network byte order
-        (dest_mac, source_mac, ether_type) = eth
-    except:
-        pass
+def portScanningDetection():
+    while True:
+        try:
+            # https://en.wikipedia.org/wiki/File:Ethernet_Type_II_Frame_format.svg
+            # wielkość buffera
+            packet = s.recv(65565)
+            eth_length = 14
+            eth_header = packet[:eth_length]
+            # 6s - 6 bytes
+            # H - unsigned short (2 bytes)
+            eth = unpack('! 6s 6s H' , eth_header)
+            # ether_type in network byte order
+            (dest_mac, source_mac, ether_type) = eth
+        except:
+            pass
 
-    #ipV4 https://en.wikipedia.org/wiki/EtherType
-    if ether_type == 2048 :
-        ip_header_packed = packet[eth_length:20+eth_length]
-        #https://nmap.org/book/tcpip-ref.html
-        ip_header = unpack('!BBHHHBBH4s4s' , ip_header_packed)
- 
-        #version and IHL (header length) are on one byte
-        version_and_ihl = ip_header[0]
-        version = version_and_ihl >> 4
-        ihl = version_and_ihl & 0xF
- 
-        iph_length = ihl * 4
-        protocol = ip_header[6]
-        s_addr = socket.inet_ntoa(ip_header[8])
-        d_addr = socket.inet_ntoa(ip_header[9])
-      
-      
-        #TCP protocol
-        if protocol == 6 :
-            t = iph_length + eth_length
-            tcp_header_packed = packet[t:t+20]
-            
-            # https://www.gatevidyalay.com/wp-content/uploads/2018/09/TCP-Header-Format.png
-            tcp_header = unpack('!HHLLBBHHH' , tcp_header_packed)
+        #ipV4 https://en.wikipedia.org/wiki/EtherType
+        if ether_type == 2048 :
+            ip_header_packed = packet[eth_length:20+eth_length]
+            #https://nmap.org/book/tcpip-ref.html
+            ip_header = unpack('!BBHHHBBH4s4s' , ip_header_packed)
+    
+            #version and IHL (header length) are on one byte
+            version_and_ihl = ip_header[0]
+            version = version_and_ihl >> 4
+            ihl = version_and_ihl & 0xF
+    
+            iph_length = ihl * 4
+            protocol = ip_header[6]
+            s_addr = socket.inet_ntoa(ip_header[8])
+            d_addr = socket.inet_ntoa(ip_header[9])
+        
+        
+            #TCP protocol
+            if protocol == 6 :
+                t = iph_length + eth_length
+                tcp_header_packed = packet[t:t+20]
+                
+                # https://www.gatevidyalay.com/wp-content/uploads/2018/09/TCP-Header-Format.png
+                tcp_header = unpack('!HHLLBBHHH' , tcp_header_packed)
 
-            source_port = tcp_header[0]
-            dest_port = tcp_header[1]
-            seq_numb = tcp_header[2]
-            ack_numb = tcp_header[3]
-            tcp_flags = convert(tcp_header[5])
-            testdata = s_addr+":"+str(source_port)+"->"+d_addr+":"+str(dest_port)
-            if(testdata not in threewayhandshake):
-                threewaycheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
+                source_port = tcp_header[0]
+                dest_port = tcp_header[1]
+                seq_numb = tcp_header[2]
+                ack_numb = tcp_header[3]
+                tcp_flags = convert(tcp_header[5])
+                testdata = s_addr+":"+str(source_port)+"->"+d_addr+":"+str(dest_port)
+                if(testdata not in threewayhandshake):
+                    threewaycheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
 
-            scancheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
-            # try:
-            #     signal.signal(signal.SIGINT,show_ports)	   
-            # except:
-            #     pass
+                scancheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
+                # try:
+                #     signal.signal(signal.SIGINT,show_ports)	   
+                # except:
+                #     pass

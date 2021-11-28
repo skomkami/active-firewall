@@ -25,15 +25,25 @@ class BruteForceModuleConf(object):
     maxTriesTotal = 10000
     periodicity = Periodicity()
 
+class PortScannerModuleConf(object):
+    enabled = True
+    blockAfterTries = 3
+
 class AppConfig(object):
     dosModuleConf = DoSModuleConf()
     bfModuleConf = BruteForceModuleConf()
+    portScannerConf = PortScannerModuleConf()
 
 def readConf(path = 'config.json') -> AppConfig:
     #handle changed path to config file
     #default location is ./config.json
     #jsonpickle requires type informations so we need to inject them into config
-    configTypesInfoDict = {"py/object": "config.config.AppConfig", "dosModuleConf": {"py/object": "config.config.DoSModuleConf"}, "bfModuleConf": {"py/object": "config.config.BruteForceModuleConf"}}
+    configTypesInfoDict = {
+        "py/object": "config.config.AppConfig", 
+        "dosModuleConf": {"py/object": "config.config.DoSModuleConf"}, 
+        "bfModuleConf": {"py/object": "config.config.BruteForceModuleConf"},
+        "portScannerConf": {"py/object": "config.config.PortScannerModuleConf"}
+    }
     try:
         with open(path, 'r') as file:
             dictionary = json.load(file)
