@@ -1,11 +1,12 @@
 import psycopg2
 
 from config.config import DBConnectionConf
+from model.detection import Detection
 
-def debug(str1: str):
+def debug(str: str):
   fileName = "test.txt"
   with open(fileName, 'a') as file:
-      file.write(str1)
+      file.write(str)
       file.write('\n')
 
 class DetectionRepo:
@@ -16,7 +17,7 @@ class DetectionRepo:
         dbname = dbConnectionConf.dbname,
         user = dbConnectionConf.user,
         password = dbConnectionConf.password,
-        host = "localhost",
+        host = dbConnectionConf.host,
         port = dbConnectionConf.port
       )
 
@@ -27,15 +28,17 @@ class DetectionRepo:
     if self.conn is not None:
         self.conn.close()
 
-  def add(self, detectionInfo: str):
-    command = "INSERT INTO detections (info) VALUES ({})".format(detectionInfo)
+  def add(self, detection: Detection):
+    command = "INSERT INTO detections (detection_time,attacker_ip_address,module_name,note) VALUES ('{}','{}', '{}', '{}')".format(
+      str(detection.detection_time), detection.attacker_ip_address, detection.module_name.name, detection.note
+    )
     cur = self.conn.cursor()
     cur.execute(command)
     cur.close()
     self.conn.commit()
 
   def get_all(self, limit = 10, offset = 0):
-    command = "SELECT * FROM detections LIMIT {} OFFSET {}".format(limit, offset)
+    command = "SELECT * FROM detections LIMIT {} OFFSET {} ORDERY BY detection_time".format(limit, offset)
     cur = self.conn.cursor()
     cur.execute(command)
     content = cur.fetchall()
