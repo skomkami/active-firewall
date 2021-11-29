@@ -4,8 +4,9 @@ from typing import List
 
 from arguments.read_args import getArgs
 from config.config import AppConfig, readConf
+from database.detections_repo import DetectionRepo
 from main.main_menu import MainMenu
-from scanning.port_scanning_detector import portScanningDetection
+from scanning.port_scanning_detector import PortScanningDetector
 from brute_force_detector.ssh_login_detector.detector import SSHLoginDetector
 
 
@@ -14,7 +15,8 @@ def runProcesses(config: AppConfig) -> List[Process]:
     dosModuleProc = None
     bruteForceProc = None
     if config.portScannerConf.enabled:
-        portScanningDetectionProc = Process(target=portScanningDetection, args=())
+        detector = PortScanningDetector(config.dbConnectionConf)
+        portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:
         bf_config = config.bfModuleConf
@@ -42,10 +44,6 @@ def main(stdscr):
     currentRow = 0
 
     menusPath = []
-    # stdscr.addstr(1, 1, str(config.dosModuleConf.maxPackets))
-    # import time
-    # stdscr.refresh()
-    # time.sleep(1)
     processes = runProcesses(config)
 
     currentMenu = MainMenu(stdscr)

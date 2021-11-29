@@ -17,6 +17,13 @@ class Periodicity:
     multiplier = 1
 
 
+class DBConnectionConf:
+    host = 'localhost'
+    user = 'postgres'
+    dbname = 'active_firewall'
+    password = 'postgres'
+    port = 5432
+
 class DoSModuleConf:
     enabled = True
     maxPackets = 1000
@@ -37,6 +44,7 @@ class PortScannerModuleConf:
 
 
 class AppConfig:
+    dbConnectionConf = DBConnectionConf()
     dosModuleConf = DoSModuleConf()
     bfModuleConf = BruteForceModuleConf()
     portScannerConf = PortScannerModuleConf()
@@ -48,6 +56,7 @@ def readConf(path='config.json') -> AppConfig:
     # jsonpickle requires type informations so we need to inject them into config
     configTypesInfoDict = {
         "py/object": "config.config.AppConfig",
+        "dbConnectionConf": {"py/object": "config.config.DBConnectionConf"},
         "dosModuleConf": {"py/object": "config.config.DoSModuleConf"},
         "bfModuleConf": {"py/object": "config.config.BruteForceModuleConf"},
         "portScannerConf": {"py/object": "config.config.PortScannerModuleConf"}
