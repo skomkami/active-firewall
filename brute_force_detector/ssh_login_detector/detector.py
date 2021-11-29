@@ -4,6 +4,7 @@ from enum import Enum
 from subprocess import Popen, PIPE
 from platform import system
 from time import sleep
+from typing import Tuple
 
 
 class ErrorMessages(Enum):
@@ -40,7 +41,7 @@ class SSHLoginDetector:
         self.log_file_path, self.get_logs_command = self.get_path_and_command()
 
     @staticmethod
-    def get_path_and_command() -> tuple[str, str]:
+    def get_path_and_command() -> Tuple[str, str]:
         _os = system()
         if _os == 'Linux':
             parameters = LinuxParameters

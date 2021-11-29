@@ -6,7 +6,9 @@ from collections import OrderedDict
 import os
 import subprocess
 import signal
-import optparse 
+import optparse
+
+from database.detections_repo import DetectionRepo 
 #define ETH_P_ALL    0x0003
 
 
@@ -31,12 +33,6 @@ import optparse
 
 global threewayhandshake,waiting,fullscandb,halfscandb,xmasscandb,nullscandb,finscandb,scannedports,blacklist
 
-fileName = "test.txt"
-
-def writeDetection(str):
-    with open(fileName, 'a') as file:
-        file.write(str)
-        file.write('\n')
 
 blacklist = []
 # fullscandb = {}
@@ -110,7 +106,7 @@ def threewaycheck(sip,dip,sport,dport,seqnum,acknum,flags):
                 threewayhandshake.append(sip+":"+str(sport)+"->"+dip+":"+str(dport))			
                 break
 
-def scancheck(sip, dip, sport, dport, seqnum, acknum, flags):
+def scancheck(detectionRepo: DetectionRepo, sip, dip, sport, dport, seqnum, acknum, flags):
     global data,dataforthreewaycheck,dbdata,reverse	
     data = sip+":"+str(sport)+"->"+dip+":"+str(dport)+"_"+str(seqnum)+"_"+str(acknum)+"_"+"/".join(flags)
     dataforthreewaycheck = sip+":"+str(sport)+"->"+dip+":"+str(dport)
@@ -122,9 +118,9 @@ def scancheck(sip, dip, sport, dport, seqnum, acknum, flags):
         returned = half_open_result
         if (isinstance(returned,(str))):
             # print(returned)
-            writeDetection(returned)
+            detectionRepo.add(returned)
         else:
-            writeDetection(revthreeway+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!")
+            detectionRepo.add(revthreeway+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!")
             # print(bgcolors.BOLD+bgcolors.OKBLUE+revthreeway+bgcolors.ENDC+bgcolors.WARNING+bgcolors.BOLD+" Port Scanning Detected: [Style not Defined]:Attempt to connect closed port!"+bgcolors.ENDC)
     # elif full_open_result := fullconnectscan(sip,dip,sport,dport,seqnum,acknum,flags):
     #     returned = full_open_result
@@ -303,7 +299,7 @@ except AttributeError:
 # print ("")
 # print (bgcolors.ENDC)
 
-def portScanningDetection():
+def portScanningDetection(detectionsRepo: DetectionRepo):
     while True:
         try:
             # https://en.wikipedia.org/wiki/File:Ethernet_Type_II_Frame_format.svg
@@ -353,7 +349,7 @@ def portScanningDetection():
                 if(testdata not in threewayhandshake):
                     threewaycheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
 
-                scancheck(s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
+                scancheck(detectionsRepo, s_addr,d_addr,source_port,dest_port,seq_numb,ack_numb,tcp_flags)
                 # try:
                 #     signal.signal(signal.SIGINT,show_ports)	   
                 # except:
