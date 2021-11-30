@@ -127,6 +127,6 @@ class SSHLoginDetector:
                 continue
             if previous_log_timestamp:
                 logs = logs[1:]
-            previous_log_timestamp = self.get_log_timestamp(logs[-1])
+            previous_log_timestamp = self.get_log_timestamp(logs[-1]).strftime('%b %d %H:%M:%S')
             self.parse_logs(logs)
             sleep(self.delay)
