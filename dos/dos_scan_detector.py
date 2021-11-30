@@ -57,7 +57,6 @@ class DosAttackDetector(AbstractAnalysePackets):
         return "Dos attack"
 
     def process_packet(self, packet: Packet):
-        debug(self.module_name() + str(packet))
         try:
             self.packetsDb.setdefault(packet.from_ip, RulesAccumulator.init(datetime.now()))
             self.packetsDb[packet.from_ip].plus(packet)
