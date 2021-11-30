@@ -4,7 +4,7 @@ from typing import List
 
 from arguments.read_args import getArgs
 from config.config import AppConfig, readConf
-from dos.dos_scanner import DosAttackDetector
+from dos.dos_scan_detector import DosAttackDetector
 from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
 from brute_force_detector.ssh_login_detector.detector import SSHLoginDetector

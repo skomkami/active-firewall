@@ -16,5 +16,10 @@
             "unit": "Second",
             "multiplier": 1
         }
+    },
+    "portScannerConf": {
+        "enabled": true,
+        "blockAfterTries": 3,
+        "lanIp": "127.0.0.1"
     }
 }

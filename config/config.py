@@ -16,7 +16,6 @@ class Periodicity:
     unit = PeriodicityUnit.Minute
     multiplier = 1
 
-
 class DBConnectionConf:
     host = 'localhost'
     user = 'postgres'

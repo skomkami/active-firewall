@@ -8,3 +8,7 @@ Usage:
 ```bash
 python3 run.py [-f path_to_config_file]
 ```
+To run nginx container (for dos attack testing)
+```bash
+docker run --name some-nginx -d -p 80:80 nginx
+```
