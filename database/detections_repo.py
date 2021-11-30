@@ -1,7 +1,8 @@
+from typing import Tuple
 import psycopg2
 
 from config.config import DBConnectionConf
-from model.detection import Detection
+from model.detection import Detection, ModuleName
 
 def debug(str: str):
   fileName = "test.txt"
@@ -37,11 +38,17 @@ class DetectionRepo:
     cur.close()
     self.conn.commit()
 
+  def detection_from_tuple(self, tuple: Tuple) -> Detection:
+    (detection_time, attacker_ip_address, module_name, note, id) = tuple
+    return Detection(detection_time, attacker_ip_address, ModuleName(module_name), note, id)
+
   def get_all(self, limit = 10, offset = 0):
-    command = "SELECT * FROM detections LIMIT {} OFFSET {} ORDERY BY detection_time".format(limit, offset)
+    command = "SELECT detection_time, attacker_ip_address, module_name, note, detection_id FROM detections LIMIT {} OFFSET {}".format(limit, offset)
     cur = self.conn.cursor()
     cur.execute(command)
     content = cur.fetchall()
     cur.close()
     self.conn.commit()
-    return content
+    debug(str(content))
+    detections = list(map(self.detection_from_tuple, content))
+    return detections

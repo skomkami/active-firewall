@@ -1,5 +1,4 @@
-import curses
-from abc import ABC, abstractmethod
+from abc import ABC, abstractclassmethod, abstractmethod
 
 
 class AbstractMenu(ABC):
@@ -14,28 +13,29 @@ class AbstractMenu(ABC):
 
     # it should return entered submenu or None (then app should return to parent menu)
     @abstractmethod
-    def handleAction(self, selectedRow):
+    def handleAction(self, selected_row, selected_page):
         return None
 
     def __init__(self, stdscr):
         self.stdscr = stdscr
 
-    def show(self, selectedRow):
+    @abstractmethod
+    def show_content(self, selected_row, selected_page, width, height):
+        return None
+    
+    def has_next_page(self):
+        return False
+
+    def show(self, selected_row, selected_page = 1):
         self.stdscr.clear()
         h, w = self.stdscr.getmaxyx()
+        esc_string = "QUIT - [Q]"
         # self.stdscr.attron(curses.color_pair(1))
 
-        selectedRowIndex = selectedRow % len(self.menuOptions())
         self.stdscr.addstr(0, 0, self.title())
+        self.stdscr.addstr(0, w-len(esc_string), esc_string)
 
-        for idx, item in enumerate(self.menuOptions()):
-            x = w // 2 - len(item) // 2
-            y = h // 2 - len(self.menuOptions()) // 2 + idx
-            if idx == selectedRowIndex:
-                self.stdscr.attron(curses.color_pair(2))
-            self.stdscr.addstr(y, x, item)
-            if idx == selectedRowIndex:
-                self.stdscr.attroff(curses.color_pair(2))
+        self.show_content(selected_row, selected_page, w, h)
 
         # self.stdscr.attroff(curses.color_pair(1))
         self.stdscr.refresh()
