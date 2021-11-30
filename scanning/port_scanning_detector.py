@@ -1,20 +1,23 @@
 from datetime import datetime
 from struct import *
-from config.config import DBConnectionConf
+from config.config import DBConnectionConf, PortScannerModuleConf
 from database.detections_repo import debug
 from model.detection import Detection, ModuleName
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
 from model.packet import Packet
 
 class PortScanningDetector(AbstractAnalysePackets):
-    def __init__(self, dbConfig: DBConnectionConf):
+    def __init__(self, dbConfig: DBConnectionConf, lanIp: str = ""):
         super().__init__(dbConfig)
         self.halfscandb = {}
+        self.lanIp = lanIp
 
     def module_name(self):
         return "Port Scanning"
 
     def process_packet(self, packet: Packet):
+        if packet.from_ip == self.lanIp:
+            return
         p_direction = packet.from_ip+"->"+packet.to_ip
         p_reverse_direction = packet.to_ip+"->"+packet.from_ip
         if("SYN" in packet.flags and packet.seq_no>0 and packet.ack_no==0 and len(packet.flags)==1):
@@ -30,3 +33,5 @@ class PortScanningDetector(AbstractAnalysePackets):
                     note="Attacked port: {}".format(str(packet.to_port))
                 )
                 self.repo.add(detection)
+
+        

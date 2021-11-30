@@ -14,7 +14,9 @@ def runProcesses(config: AppConfig) -> List[Process]:
     dosModuleProc = None
     bruteForceProc = None
     if config.portScannerConf.enabled:
-        detector = PortScanningDetector(config.dbConnectionConf)
+        psConfig = config.portScannerConf
+        lanIp = psConfig.lanIp
+        detector = PortScanningDetector(config.dbConnectionConf, lanIp)
         portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:
