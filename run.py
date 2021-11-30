@@ -41,15 +41,14 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
-    os.environ.setdefault('ESCDELAY', '0')
     current_row = 0
+    current_page = 0
 
     menus_path = []
     processes = runProcesses(config)
 
     current_menu = MainMenu(stdscr, config.dbConnectionConf)
     current_menu.show(current_row)
-    current_page = 1
 
     while 1:
         key = stdscr.getch()
@@ -58,7 +57,7 @@ def main(stdscr):
         elif key == curses.KEY_DOWN:
             current_row += 1
         elif key == curses.KEY_LEFT:
-            if current_page > 1:
+            if current_page > 0:
                 current_page-=1
         elif key == curses.KEY_RIGHT and current_menu.has_next_page():
             debug("next page")

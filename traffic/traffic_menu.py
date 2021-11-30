@@ -19,7 +19,7 @@ class TraficMenu(AbstractMenu):
         return None
 
     def has_next_page(self):
-        return len(self.detections_repo.get_all(offset=10*self.current_page)) == 10
+        return len(self.detections_repo.get_all(offset=10*self.current_page)) >= 10
 
     def show_content(self, selected_row, selected_page, width, height):
         self.current_page = selected_page
@@ -30,13 +30,14 @@ class TraficMenu(AbstractMenu):
         x = width // 2 - row_display_width // 2
 
         header_y_pos = height // 2 - len(detections) // 2 - 1
+        nav_y_pos = height // 2 + len(detections) // 2 + 1
 
-        self.stdscr.attron(curses.color_pair(1))
+        self.stdscr.attron(curses.color_pair(2))
         self.stdscr.addstr(header_y_pos, x, "ID")
         self.stdscr.addstr(header_y_pos, x+4, "ATTACKER ADDRESS")
         self.stdscr.addstr(header_y_pos, x+25, "DETECTED AT")
         self.stdscr.addstr(header_y_pos, x+60, "MODULE")
-        self.stdscr.attroff(curses.color_pair(1))
+        self.stdscr.attroff(curses.color_pair(2))
 
         for idx, detection in enumerate(detections):
             y = height // 2 - len(detections) // 2 + idx
@@ -46,9 +47,14 @@ class TraficMenu(AbstractMenu):
             self.stdscr.addstr(y, x+25, str(detection.detection_time))
             self.stdscr.addstr(y, x+60, detection.module_name.name)
 
-        self.stdscr.addstr(height-1, 0, "<-")
-        self.stdscr.addstr(height-1, width - 3, "->")
-
+        prev_page = "<- Previous page"
+        next_page = "Next page ->"
+        self.stdscr.attron(curses.color_pair(2))
+        if selected_page > 0:
+            self.stdscr.addstr(nav_y_pos, x, prev_page)
+        if len(detections) >= 10:
+            self.stdscr.addstr(nav_y_pos, x + row_display_width - len(next_page) - 1, next_page)
+        self.stdscr.attroff(curses.color_pair(2))
 
     def title(self):
         return "Traffic menu"
