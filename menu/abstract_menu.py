@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 
 
 class AbstractMenu(ABC):
@@ -26,7 +26,7 @@ class AbstractMenu(ABC):
     def has_next_page(self):
         return False
 
-    def show(self, selected_row, selected_page = 1):
+    def show(self, selected_row, selected_page = 0):
         self.stdscr.clear()
         h, w = self.stdscr.getmaxyx()
         esc_string = "QUIT - [Q]"

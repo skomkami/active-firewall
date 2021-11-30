@@ -4,11 +4,10 @@ from typing import List
 
 from arguments.read_args import getArgs
 from config.config import AppConfig, readConf
-from database.detections_repo import DetectionRepo, debug
+from dos.dos_scanner import DosAttackDetector
 from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
 from brute_force_detector.ssh_login_detector.detector import SSHLoginDetector
-import os
 
 def runProcesses(config: AppConfig) -> List[Process]:
     portScanningDetectionProc = None
@@ -25,6 +24,10 @@ def runProcesses(config: AppConfig) -> List[Process]:
         detector = SSHLoginDetector(config.dbConnectionConf, frequency, attempt_limit)
         bruteForceProc = Process(target=detector.run, args=())
         bruteForceProc.start()
+    if config.dosModuleConf.enabled:
+        detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf)
+        dosModuleProc = Process(target=detector.run, args=())
+        dosModuleProc.start()
 
     return [portScanningDetectionProc, dosModuleProc, bruteForceProc]
 
@@ -41,15 +44,14 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
-    os.environ.setdefault('ESCDELAY', '0')
     current_row = 0
+    current_page = 0
 
     menus_path = []
     processes = runProcesses(config)
 
     current_menu = MainMenu(stdscr, config.dbConnectionConf)
     current_menu.show(current_row)
-    current_page = 1
 
     while 1:
         key = stdscr.getch()
@@ -58,10 +60,9 @@ def main(stdscr):
         elif key == curses.KEY_DOWN:
             current_row += 1
         elif key == curses.KEY_LEFT:
-            if current_page > 1:
+            if current_page > 0:
                 current_page-=1
         elif key == curses.KEY_RIGHT and current_menu.has_next_page():
-            debug("next page")
             current_page+=1
         elif key == ord('q'):
             if len(menus_path) > 0:
