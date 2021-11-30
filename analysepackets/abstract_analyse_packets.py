@@ -18,6 +18,7 @@ class AbstractAnalysePackets(ABC):
             debug('[*]Socket can\'t be created! Error Code : ' + str(msg[0]) + ' Error Message ' + msg[1])
             sys.exit()
         except AttributeError:
+            debug('[*]Socket can\'t be created! Because of Attribute error')
             sys.exit()
         self.dbConfig = dbConfig
         
@@ -31,11 +32,16 @@ class AbstractAnalysePackets(ABC):
         return parsed_flags
 
     @abstractmethod
-    def process_packet(packet: Packet):
+    def process_packet(self, packet: Packet):
+        return None
+
+    @abstractmethod
+    def module_name(self):
         return None
 
     def run(self):
         self.repo = DetectionRepo(self.dbConfig)
+        debug(self.module_name() + " started")
         while True:
             try:
                 # https://en.wikipedia.org/wiki/File:Ethernet_Type_II_Frame_format.svg
@@ -49,6 +55,7 @@ class AbstractAnalysePackets(ABC):
                 # ether_type in network byte order
                 (dest_mac, src_mac, ether_type) = eth_header
             except:
+                debug("Error in analyser")
                 pass
 
             #ipV4 https://en.wikipedia.org/wiki/EtherType

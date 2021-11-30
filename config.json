@@ -1,6 +1,6 @@
 {
     "dosModuleConf": {
-        "enabled": false,
+        "enabled": true,
         "maxPackets": 5000,
         "maxDataKB": 1000,
         "periodicity": {

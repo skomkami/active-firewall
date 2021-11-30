@@ -4,11 +4,10 @@ from typing import List
 
 from arguments.read_args import getArgs
 from config.config import AppConfig, readConf
-from database.detections_repo import DetectionRepo, debug
+from dos.dos_scanner import DosAttackDetector
 from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
 from brute_force_detector.ssh_login_detector.detector import SSHLoginDetector
-import os
 
 def runProcesses(config: AppConfig) -> List[Process]:
     portScanningDetectionProc = None
@@ -25,6 +24,10 @@ def runProcesses(config: AppConfig) -> List[Process]:
         detector = SSHLoginDetector(config.dbConnectionConf, frequency, attempt_limit)
         bruteForceProc = Process(target=detector.run, args=())
         bruteForceProc.start()
+    if config.dosModuleConf.enabled:
+        detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf)
+        dosModuleProc = Process(target=detector.run, args=())
+        dosModuleProc.start()
 
     return [portScanningDetectionProc, dosModuleProc, bruteForceProc]
 
@@ -60,7 +63,6 @@ def main(stdscr):
             if current_page > 0:
                 current_page-=1
         elif key == curses.KEY_RIGHT and current_menu.has_next_page():
-            debug("next page")
             current_page+=1
         elif key == ord('q'):
             if len(menus_path) > 0:

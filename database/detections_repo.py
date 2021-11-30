@@ -43,12 +43,11 @@ class DetectionRepo:
     return Detection(detection_time, attacker_ip_address, ModuleName(module_name), note, id)
 
   def get_all(self, limit = 10, offset = 0):
-    command = "SELECT detection_time, attacker_ip_address, module_name, note, detection_id FROM detections LIMIT {} OFFSET {}".format(limit, offset)
+    command = "SELECT detection_time, attacker_ip_address, module_name, note, detection_id FROM detections ORDER BY detection_time LIMIT {} OFFSET {}".format(limit, offset)
     cur = self.conn.cursor()
     cur.execute(command)
     content = cur.fetchall()
     cur.close()
     self.conn.commit()
-    debug(str(content))
     detections = list(map(self.detection_from_tuple, content))
     return detections

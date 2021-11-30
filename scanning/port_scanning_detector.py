@@ -11,13 +11,12 @@ class PortScanningDetector(AbstractAnalysePackets):
         super().__init__(dbConfig)
         self.halfscandb = {}
 
+    def module_name(self):
+        return "Port Scanning"
 
     def process_packet(self, packet: Packet):
         p_direction = packet.from_ip+"->"+packet.to_ip
         p_reverse_direction = packet.to_ip+"->"+packet.from_ip
-
-        debug(p_direction)
-
         if("SYN" in packet.flags and packet.seq_no>0 and packet.ack_no==0 and len(packet.flags)==1):
             self.halfscandb[p_direction+"_"+str(packet.seq_no)] = p_direction+"_SYN_ACK_"+str(packet.seq_no)+"_"+str(packet.ack_no)
         elif("RST" in packet.flags and "ACK" in packet.flags and len(packet.flags)==2):
