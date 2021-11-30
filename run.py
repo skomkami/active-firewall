@@ -22,7 +22,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
         bf_config = config.bfModuleConf
         frequency = bf_config.frequency
         attempt_limit = bf_config.attemptLimit
-        detector = SSHLoginDetector(frequency, attempt_limit)
+        detector = SSHLoginDetector(config.dbConnectionConf, frequency, attempt_limit)
         bruteForceProc = Process(target=detector.run, args=())
         bruteForceProc.start()
 
