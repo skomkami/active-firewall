@@ -17,7 +17,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
     if config.portScannerConf.enabled:
         psConfig = config.portScannerConf
         lanIp = psConfig.lanIp
-        detector = PortScanningDetector(config.dbConnectionConf, lanIp)
+        detector = PortScanningDetector(config.dbConnectionConf, psConfig, lanIp)
         portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:

@@ -63,7 +63,7 @@ class DosAttackDetector(AbstractAnalysePackets):
         self.stats = DosRunningStats.init(datetime.now())
 
     def init(self):
-        self.statsRepo = DosRepo(self.dbConfig)
+        self.statsRepo = DosRepo(self.db_config)
 
     def module_name(self):
         return "Dos attack"

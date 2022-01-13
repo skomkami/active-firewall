@@ -1,25 +1,29 @@
 {
-    "dosModuleConf": {
-        "enabled": true,
-        "maxPackets": 5000,
-        "maxDataKB": 1000,
-        "periodicity": {
-            "unit": "Second",
-            "multiplier": 10
-        }
-    },
-    "bfModuleConf": {
-        "enabled": true,
-        "frequency": 100,
-        "attemptLimit": 100,
-        "periodicity": {
-            "unit": "Second",
-            "multiplier": 1
-        }
-    },
-    "portScannerConf": {
-        "enabled": true,
-        "blockAfterTries": 3,
-        "lanIp": "127.0.0.1"
+  "dosModuleConf": {
+    "enabled": true,
+    "maxPackets": 5000,
+    "maxDataKB": 1000,
+    "periodicity": {
+      "unit": "Second",
+      "multiplier": 10
     }
+  },
+  "bfModuleConf": {
+    "enabled": true,
+    "frequency": 100,
+    "attemptLimit": 100,
+    "periodicity": {
+      "unit": "Second",
+      "multiplier": 1
+    }
+  },
+  "portScannerConf": {
+    "enabled": true,
+    "blockAfterTries": 3,
+    "lanIp": "127.0.0.1",
+    "periodicity": {
+      "unit": "Second",
+      "multiplier": 10
+    }
+  }
 }

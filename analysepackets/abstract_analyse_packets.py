@@ -11,7 +11,7 @@ from utils.utils import debug
 
 
 class AbstractAnalysePackets(ABC):
-    def __init__(self, dbConfig: DBConnectionConf):
+    def __init__(self, db_config: DBConnectionConf):
         try:
             self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
         except socket.error as msg:
@@ -21,7 +21,8 @@ class AbstractAnalysePackets(ABC):
         except AttributeError:
             debug('[*]Socket can\'t be created! Because of Attribute error')
             sys.exit()
-        self.dbConfig = dbConfig
+        self.db_config = db_config
+        self.stats = None
 
     def parse_flags(self, dec):
         parsed_flags = []
@@ -47,7 +48,7 @@ class AbstractAnalysePackets(ABC):
         return None
 
     def run(self):
-        self.repo = DetectionRepo(self.dbConfig)
+        self.repo = DetectionRepo(self.db_config)
         self.init()
         debug(self.module_name() + " started")
         while True:

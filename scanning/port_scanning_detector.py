@@ -17,7 +17,7 @@ from utils.utils import debug
 
 @dataclass
 class PortScanningStats(ModuleStats):
-    scan_tries: int
+    scan_tries: int = 0
 
     def plus(self, other: PortScanningStats) -> PortScanningStats:
         self.scan_tries += other.scan_tries
@@ -49,7 +49,7 @@ class PortScanningRunningStats(RunningStatsAccumulator):
                 id=None,
                 time_window_start=self.since,
                 time_window_end=datetime.now(),
-                mean_scans_per_addr=stats_sum/total
+                mean_scans_per_addr=stats_sum.scan_tries/total
             )
             return mean_stats
         else:
@@ -61,49 +61,47 @@ class PortScanningRunningStats(RunningStatsAccumulator):
             )
 
 class PortScanningDetector(AbstractAnalysePackets):
-    def __init__(self, dbConfig: DBConnectionConf, lanIp: str = ""):
-        super().__init__(dbConfig)
+    def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf, lanIp: str = ""):
+        super().__init__(db_config)
+        self.config = port_scanning_module_conf
         self.halfscandb = {}
         self.lanIp = lanIp
         self.stats_repo = None
         self.stats = PortScanningRunningStats.init(datetime.now())
 
     def init(self):
-        self.port_scanning_repo = PortScanningRepo(self.dbConfig)
+        self.stats_repo = PortScanningRepo(self.db_config)
 
     def module_name(self):
         return "Port Scanning"
 
     def process_packet(self, packet: Packet):
         try:
-            if packet.from_ip == self.lanIp:
-                return
             p_direction = packet.from_ip+"->"+packet.to_ip
             p_reverse_direction = packet.to_ip+"->"+packet.from_ip
             if("SYN" in packet.flags and packet.seq_no>0 and packet.ack_no==0 and len(packet.flags)==1):
                 self.halfscandb[p_direction+"_"+str(packet.seq_no)] = p_direction+"_SYN_ACK_"+str(packet.seq_no)+"_"+str(packet.ack_no)
-                debug('received syn')
             elif("RST" in packet.flags and "ACK" in packet.flags and len(packet.flags)==2):
                 tmp = p_reverse_direction+"_"+str(packet.ack_no-1)
                 if tmp in self.halfscandb:
                     del self.halfscandb[p_reverse_direction+"_"+str(packet.ack_no-1)]
-                # detection = Detection(
-                #     detection_time=datetime.now(),
-                #     attacker_ip_address=packet.to_ip,
-                #     module_name=ModuleName.PORTSCANNING_MODULE,
-                #     note="Attacked port: {}".format(str(packet.to_port))
-                # )
-                # self.repo.add(detection)
+                    # detection = Detection(
+                    #     detection_time=datetime.now(),
+                    #     attacker_ip_address=packet.to_ip,
+                    #     module_name=ModuleName.PORTSCANNING_MODULE,
+                    #     note="Attacked port: {}".format(str(packet.to_port))
+                    # )
+                    # self.repo.add(detection)
 
-                debug("detected port scanning")
-                packet_stats = PortScanningStats(1)
-                self.stats.plus(packet.to_ip, packet_stats)
+                    packet_stats = PortScanningStats(scan_tries=1)
+                    self.stats.plus(packet.to_ip, packet_stats)
 
-                valid = self.stats.check_validity(self.config.periodicity)
-                if not valid:
-                    mean = self.stats.calc_mean()
-                    self.stats_repo.add(mean)
-                    self.stats.reset(datetime.now())
+                    valid = self.stats.check_validity(self.config.periodicity)
+                    debug('valid: ' + str(valid))
+                    if not valid:
+                        mean = self.stats.calc_mean()
+                        self.stats_repo.add(mean)
+                        self.stats.reset(datetime.now())
         except Exception as msg:
             debug("error in port scanning scan: " + str(msg))
 

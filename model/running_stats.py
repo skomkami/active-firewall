@@ -13,7 +13,7 @@ def seconds_of(periodicity: Periodicity):
         unit_to_seconds = 60
     elif periodicity['unit'] == PeriodicityUnit.Hour:
         unit_to_seconds = 60 * 60
-    else:
+    elif periodicity['unit'] == PeriodicityUnit.Day:
         unit_to_seconds = 60 * 60 * 24
     return unit_to_seconds * periodicity['multiplier']
 
@@ -44,6 +44,7 @@ class RunningStatsAccumulator(ABC):
     def check_validity(self, periodicity: Periodicity) -> bool:
         now = datetime.now()
         counter_valid_to = self.since + timedelta(seconds=seconds_of(periodicity))
+        # debug("now: " + str(now) + ', valid to: ' + str(counter_valid_to))
         if now > counter_valid_to:
             return False
         return True
