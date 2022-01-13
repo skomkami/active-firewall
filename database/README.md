@@ -9,7 +9,7 @@ docker run --rm -it --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres -
 ``` -->
 
 ```bash
-docker run --rm -it --name postgres -p 5432:5432 -e POSTGRES_DB=active_firewall -e POSTGRES_PASSWORD=postgres -v $(pwd)/entry-points/detections.sql:/docker-entrypoint-initdb.d/detections.sql -d postgres
+docker run --rm -it --name postgres -p 5432:5432 -e POSTGRES_DB=active_firewall -e POSTGRES_PASSWORD=postgres -v $(pwd)/entry-points/db.sql:/docker-entrypoint-initdb.d/db.sql -d postgres
 ```
 
 ```bash
