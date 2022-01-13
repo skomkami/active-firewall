@@ -5,7 +5,7 @@
         "maxDataKB": 1000,
         "periodicity": {
             "unit": "Second",
-            "multiplier": 2
+            "multiplier": 10
         }
     },
     "bfModuleConf": {

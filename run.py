@@ -3,11 +3,19 @@ from multiprocessing import Process
 from typing import List
 
 from arguments.read_args import getArgs
-from config.config import AppConfig, readConf
+from config.config import AppConfig
 from dos.dos_scan_detector import DosAttackDetector
 from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
 from brute_force_detector.ssh_login_detector.detector import SSHLoginDetector
+import os
+
+# import pydevd
+# pydevd.settrace('localhost', port=8899)
+#
+# And then to fixup the broken setting in pydevd...
+#
+os.environ['TERM'] = 'xterm'
 
 def runProcesses(config: AppConfig) -> List[Process]:
     portScanningDetectionProc = None
@@ -41,7 +49,7 @@ def terminate_processes(processes: list) -> list:
     return processes
 
 def main(stdscr):
-    config = readConf(getArgs()['config_file'] or 'config.json')
+    config = AppConfig()#readConf(getArgs()['config_file'] or 'config.json')
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
