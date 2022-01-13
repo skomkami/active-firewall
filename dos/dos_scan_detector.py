@@ -19,14 +19,10 @@ class DosStats(ModuleStats):
     packets_no: int = 0
     packets_size: int = 0
 
-    def plus(self, other: DosRunningStats) -> DosRunningStats:
+    def plus(self, other: DosStats) -> DosStats:
         self.packets_no += 1
         self.packets_size += other.packets_size
         return self
-
-    def reset(self) -> DosRunningStats:
-        self.packets_no = 0
-        self.packets_size = 0
 
 
 @dataclass

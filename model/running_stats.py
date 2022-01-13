@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from functools import reduce
 from config.config import Periodicity, PeriodicityUnit
 from utils.utils import debug
 
@@ -19,9 +20,6 @@ def seconds_of(periodicity: Periodicity):
 
 class ModuleStats(ABC):
     def plus(self, other: ModuleStats) -> ModuleStats:
-        raise NotImplementedError
-
-    def reset(self) -> ModuleStats:
         raise NotImplementedError
 
 

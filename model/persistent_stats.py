@@ -3,23 +3,23 @@ from datetime import datetime
 
 
 @dataclass
-class Stats:
+class PersistentStats:
     id: int
     time_window_start: datetime
     time_window_end: datetime
 
 
 @dataclass
-class DosModuleStats(Stats):
+class DosModuleStats(PersistentStats):
     mean_packets_per_addr: float
     mean_packets_size_per_addr: float
 
 
 @dataclass
-class BruteForceModuleStats(Stats):
+class BruteForceModuleStats(PersistentStats):
     mean_tries_per_addr: float
 
 
 @dataclass
-class PortScanningModuleStats(Stats):
+class PortScanningModuleStats(PersistentStats):
     mean_scans_per_addr: float
