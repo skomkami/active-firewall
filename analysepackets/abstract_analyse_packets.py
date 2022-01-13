@@ -5,8 +5,9 @@ import socket, sys
 from struct import *
 from collections import OrderedDict
 from config.config import DBConnectionConf
-from database.detections_repo import DetectionRepo, debug
+from database.detections_repo import DetectionRepo
 from model.packet import Packet
+from utils.utils import debug
 
 
 class AbstractAnalysePackets(ABC):
@@ -33,7 +34,7 @@ class AbstractAnalysePackets(ABC):
                 parsed_flags.append(flags_dict[i])
         return parsed_flags
 
-    @abstractmethod
+    # @abstractmethod
     def init(self):
         return
 

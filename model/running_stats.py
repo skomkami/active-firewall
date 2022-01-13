@@ -1,8 +1,9 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from __future__ import annotations
-from config.config import PeriodicityUnit, Periodicity
+from config.config import Periodicity, PeriodicityUnit
+from utils.utils import debug
 
 
 def seconds_of(periodicity: Periodicity):
@@ -31,17 +32,13 @@ class RunningStatsAccumulator(ABC):
     statsDb: dict
 
     @abstractmethod
-    def empty_stats(self):
+    def empty_stats(self) -> ModuleStats:
         raise NotImplementedError
 
     def reset(self, date: datetime):
         self.statsDb = {}
         self.since = date
 
-    @staticmethod
-    def init(date: datetime):
-        new_acc = RunningStatsAccumulator(since=date, statsDb={})
-        return new_acc
 
     def plus(self, address: str, other: ModuleStats):
         self.statsDb.setdefault(address, self.empty_stats()).plus(other)

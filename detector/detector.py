@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from config.config import Periodicity, PeriodicityUnit
-
 
 class Detector(ABC):
 

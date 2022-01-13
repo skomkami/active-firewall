@@ -1,7 +1,6 @@
 from datetime import datetime
 from struct import *
 from config.config import DBConnectionConf
-from database.detections_repo import debug
 from model.detection import Detection, ModuleName
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
 from model.packet import Packet

@@ -15,7 +15,7 @@ from utils.utils import debug
 
 
 @dataclass
-class DosRunningStats(ModuleStats):
+class DosStats(ModuleStats):
     packets_no: int = 0
     packets_size: int = 0
 
@@ -31,15 +31,20 @@ class DosRunningStats(ModuleStats):
 
 @dataclass
 class DosRunningStats(RunningStatsAccumulator):
-    def empty_stats(self):
-        DosRunningStats()
+    def empty_stats(self) -> DosStats:
+        return DosStats()
+
+    @staticmethod
+    def init(date: datetime):
+        new_acc = DosRunningStats(since=date, statsDb={})
+        return new_acc
 
     # returns false when rules are not exceeded and true when exceeded (dos detected)
     def check_rules(self, address: str, dosModuleConf: DoSModuleConf) -> bool:
-        if self.no_counter >= dosModuleConf.maxPackets or self.size_counter >= dosModuleConf.maxDataKB * 1000:
-            return True
-        else:
-            return False
+        # if self.no_counter >= dosModuleConf.maxPackets or self.size_counter >= dosModuleConf.maxDataKB * 1000:
+        #     return True
+        # else:
+        return False
 
     def calc_mean(self) -> DosModuleStats:
         total = len(self.statsDb)
@@ -47,6 +52,7 @@ class DosRunningStats(RunningStatsAccumulator):
         mean_stats = DosModuleStats(
             id=None,
             time_window_start=self.since,
+            time_window_end=datetime.now(),
             mean_packets_per_addr=stats_sum.packets_no/total,
             mean_packets_size_per_addr=stats_sum.packets_size/total
         )
@@ -58,7 +64,7 @@ class DosAttackDetector(AbstractAnalysePackets):
         super().__init__(db_config)
         self.statsRepo = None
         self.config = dos_module_conf
-        self.stats = DosRunningStats.init(datetime.now)
+        self.stats = DosRunningStats.init(datetime.now())
 
     def init(self):
         self.statsRepo = DosRepo(self.dbConfig)
@@ -68,7 +74,7 @@ class DosAttackDetector(AbstractAnalysePackets):
 
     def process_packet(self, packet: Packet):
         try:
-            packet_stats = DosRunningStats(1, packet.size)
+            packet_stats = DosStats(1, packet.size)
             self.stats.plus(packet.from_ip, packet_stats)
 
             valid = self.stats.check_validity(self.config.periodicity)
