@@ -1,12 +1,12 @@
 from typing import Tuple
 
 from database.repo import Repo
-from model.persistent_stats import DosModuleStats
+from model.persistent_stats import DosPersistentStats
 
 
 class DosRepo(Repo):
 
-    def build_insert_query(self, entity: DosModuleStats) -> str:
+    def build_insert_query(self, entity: DosPersistentStats) -> str:
         command = "INSERT INTO dos_module_stats (time_window_start, time_window_end, mean_packets_per_addr, mean_packets_size_per_addr) VALUES ('{}','{}', '{}', '{}')".format(
             entity.time_window_start, entity.time_window_end, entity.mean_packets_per_addr, entity.mean_packets_size_per_addr
         )
@@ -17,6 +17,6 @@ class DosRepo(Repo):
             limit, offset)
         return command
 
-    def entity_from_tuple(self, tuple: Tuple) -> DosModuleStats:
+    def entity_from_tuple(self, tuple: Tuple) -> DosPersistentStats:
         (id, time_window_start, time_window_end, mean_packets_per_addr, mean_packets_size_per_addr) = tuple
-        return DosModuleStats(id, time_window_start, time_window_end, mean_packets_per_addr, mean_packets_size_per_addr)
+        return DosPersistentStats(id, time_window_start, time_window_end, mean_packets_per_addr, mean_packets_size_per_addr)

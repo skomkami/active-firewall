@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 import psycopg2
 
@@ -34,6 +34,14 @@ class Repo:
         command = self.build_insert_query(entity)
         cur = self.conn.cursor()
         cur.execute(command)
+        cur.close()
+        self.conn.commit()
+
+    def add_many(self, entities: List[object]):
+        commands = map(lambda ent: self.build_insert_query(ent), entities)
+        cur = self.conn.cursor()
+        for command in commands:
+            cur.execute(command)
         cur.close()
         self.conn.commit()
 

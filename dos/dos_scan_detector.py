@@ -5,11 +5,11 @@ from datetime import datetime
 from functools import reduce
 
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-from config.config import DBConnectionConf, DoSModuleConf
+from config.config import DBConnectionConf, DoSModuleConf, Periodicity
 from database.dos_repo import DosRepo
 from model.detection import Detection, ModuleName
 from model.packet import Packet
-from model.persistent_stats import DosModuleStats
+from model.persistent_stats import DosPersistentStats
 from model.running_stats import RunningStatsAccumulator, ModuleStats
 from utils.utils import debug
 
@@ -31,8 +31,8 @@ class DosRunningStats(RunningStatsAccumulator):
         return DosStats()
 
     @staticmethod
-    def init(date: datetime):
-        new_acc = DosRunningStats(since=date, statsDb={})
+    def init(date: datetime, periodicity: Periodicity):
+        new_acc = DosRunningStats(since=date, statsDb={}, periodicity=periodicity)
         return new_acc
 
     # returns false when rules are not exceeded and true when exceeded (dos detected)
@@ -42,10 +42,10 @@ class DosRunningStats(RunningStatsAccumulator):
         # else:
         return False
 
-    def calc_mean(self) -> DosModuleStats:
+    def calc_mean(self) -> DosPersistentStats:
         total = len(self.statsDb)
         stats_sum = reduce(lambda a, b: a.plus(b), self.statsDb.values())
-        mean_stats = DosModuleStats(
+        mean_stats = DosPersistentStats(
             id=None,
             time_window_start=self.since,
             time_window_end=datetime.now(),
@@ -58,26 +58,32 @@ class DosRunningStats(RunningStatsAccumulator):
 class DosAttackDetector(AbstractAnalysePackets):
     def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf):
         super().__init__(db_config)
-        self.statsRepo = None
+        self.stats_repo = None
         self.config = dos_module_conf
-        self.stats = DosRunningStats.init(datetime.now())
+        self.stats = DosRunningStats.init(datetime.now(), dos_module_conf.periodicity)
 
     def init(self):
-        self.statsRepo = DosRepo(self.db_config)
+        self.stats_repo = DosRepo(self.db_config)
 
     def module_name(self):
         return "Dos attack"
 
     def process_packet(self, packet: Packet):
         try:
-            packet_stats = DosStats(1, packet.size)
-            self.stats.plus(packet.from_ip, packet_stats)
-
-            valid = self.stats.check_validity(self.config.periodicity)
+            valid = self.stats.check_validity()
             if not valid:
                 mean = self.stats.calc_mean()
-                self.statsRepo.add(mean)
-                self.stats.reset(datetime.now())
+                empty_windows = self.stats.forward(datetime.now())
+                empty_stats = list(
+                    map(
+                        lambda tw: DosPersistentStats(id=None, time_window=tw),
+                        empty_windows
+                    )
+                )
+                self.stats_repo.add_many([mean].extend(empty_stats))
+
+            packet_stats = DosStats(1, packet.size)
+            self.stats.plus(packet.from_ip, packet_stats)
 
             if self.stats.check_rules(packet.from_ip, self.config):
                 detection = Detection(

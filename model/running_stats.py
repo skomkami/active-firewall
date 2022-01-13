@@ -1,21 +1,12 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from functools import reduce
-from config.config import Periodicity, PeriodicityUnit
-from utils.utils import debug
+from typing import List
 
-
-def seconds_of(periodicity: Periodicity):
-    unit_to_seconds = 1
-    if periodicity['unit'] == PeriodicityUnit.Minute:
-        unit_to_seconds = 60
-    elif periodicity['unit'] == PeriodicityUnit.Hour:
-        unit_to_seconds = 60 * 60
-    elif periodicity['unit'] == PeriodicityUnit.Day:
-        unit_to_seconds = 60 * 60 * 24
-    return unit_to_seconds * periodicity['multiplier']
+from config.config import Periodicity
+from model.timewindow import TimeWindow
 
 
 class ModuleStats(ABC):
@@ -28,6 +19,7 @@ class RunningStatsAccumulator(ABC):
     since: datetime
     # address:str -> ModuleStats TODO typing
     statsDb: dict
+    periodicity: Periodicity
 
     @abstractmethod
     def empty_stats(self) -> ModuleStats:
@@ -37,14 +29,24 @@ class RunningStatsAccumulator(ABC):
         self.statsDb = {}
         self.since = date
 
+    def until(self) -> datetime:
+        return self.since + timedelta(seconds=self.periodicity.seconds()) - timedelta(microseconds=1)
 
     def plus(self, address: str, other: ModuleStats):
         self.statsDb.setdefault(address, self.empty_stats()).plus(other)
 
-    def check_validity(self, periodicity: Periodicity) -> bool:
+    def check_validity(self) -> bool:
         now = datetime.now()
-        counter_valid_to = self.since + timedelta(seconds=seconds_of(periodicity))
         # debug("now: " + str(now) + ', valid to: ' + str(counter_valid_to))
-        if now > counter_valid_to:
+        if now > self.until():
             return False
         return True
+
+    def forward(self, to_date: datetime) -> List[TimeWindow]:
+        """Adjust window to to_date and return empty TimeWindow-s between."""
+        empty_windows: List[TimeWindow] = []
+        while self.until() < to_date:
+            new_window = TimeWindow(self.since, self.until())
+            empty_windows.append(new_window)
+            self.since += timedelta(seconds=self.periodicity.seconds())
+        return empty_windows

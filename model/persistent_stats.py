@@ -1,25 +1,25 @@
 from dataclasses import dataclass
-from datetime import datetime
+
+from model.timewindow import TimeWindow
 
 
 @dataclass
 class PersistentStats:
     id: int
-    time_window_start: datetime
-    time_window_end: datetime
+    time_window: TimeWindow
 
 
 @dataclass
-class DosModuleStats(PersistentStats):
-    mean_packets_per_addr: float
-    mean_packets_size_per_addr: float
+class DosPersistentStats(PersistentStats):
+    mean_packets_per_addr: float = 0
+    mean_packets_size_per_addr: float = 0
 
 
 @dataclass
-class BruteForceModuleStats(PersistentStats):
-    mean_tries_per_addr: float
+class BruteForcePersistentStats(PersistentStats):
+    mean_tries_per_addr: float = 0
 
 
 @dataclass
-class PortScanningModuleStats(PersistentStats):
-    mean_scans_per_addr: float
+class PortScanningPersistentStats(PersistentStats):
+    mean_scans_per_addr: float = 0
