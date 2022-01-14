@@ -20,6 +20,9 @@ class Apache2LoginDetector(LoginDetector):
 
         return datetime.strptime(raw_timestamp, '%d/%b/%Y:%H:%M:%S')
 
+    def get_previous_log_timestamp(self, log: str) -> str:
+        return self.get_log_timestamp(log).strftime(r'%d\/%b\/%Y:%H:%M:%S')
+
     @staticmethod
     def get_ip(log: str) -> str:
         try:

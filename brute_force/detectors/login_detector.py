@@ -6,7 +6,6 @@ from enum import Enum
 from subprocess import Popen, PIPE
 from platform import system
 
-
 from database.detections_repo import DetectionRepo
 from model.detection import Detection
 from config.config import ServiceConfig
@@ -54,8 +53,7 @@ class LoginDetector(ABC):
             return
         if self.previous_log_timestamp:
             logs = logs[1:]
-        self.get_log_timestamp(logs[-1])
-        self.previous_log_timestamp = self.get_log_timestamp(logs[-1]).strftime(r'%d\/%b\/%Y:%H:%M:%S')
+        self.previous_log_timestamp = self.get_previous_log_timestamp(logs[-1])
         self.parse_logs(logs)
 
     def parse_logs(self, logs: list) -> None:
@@ -115,6 +113,10 @@ class LoginDetector(ABC):
     @staticmethod
     @abstractmethod
     def get_log_timestamp(log: str) -> datetime:
+        pass
+
+    @abstractmethod
+    def get_previous_log_timestamp(self, log: str) -> str:
         pass
 
     @staticmethod
