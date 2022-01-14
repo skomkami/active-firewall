@@ -7,7 +7,7 @@ from config.config import AppConfig, readConf
 from dos.dos_scan_detector import DosAttackDetector
 from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
-from brute_force_detector.detectors.ssh_login_detector import SSHLoginDetector
+from brute_force.brute_force_detector import BruteForceDetector
 
 
 def runProcesses(config: AppConfig) -> List[Process]:
@@ -21,10 +21,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
         portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:
-        bf_config = config.bfModuleConf
-        frequency = bf_config.frequency
-        attempt_limit = bf_config.attemptLimit
-        detector = SSHLoginDetector(config.dbConnectionConf, frequency, attempt_limit)
+        detector = BruteForceDetector(config.dbConnectionConf, config.bfModuleConf)
         bruteForceProc = Process(target=detector.run, args=())
         bruteForceProc.start()
     if config.dosModuleConf.enabled:

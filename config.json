@@ -11,10 +11,19 @@
   "bfModuleConf": {
     "enabled": true,
     "frequency": 100,
-    "attemptLimit": 100,
     "periodicity": {
       "unit": "Second",
       "multiplier": 1
+    },
+    "services": {
+      "ssh": {
+        "enabled": true,
+        "attemptLimit": 100
+      },
+      "apache2": {
+        "enabled": true,
+        "attemptLimit": 50
+      }
     }
   },
   "portScannerConf": {
