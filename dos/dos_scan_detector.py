@@ -7,6 +7,7 @@ from functools import reduce
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
 from config.config import DBConnectionConf, DoSModuleConf, Periodicity
 from database.dos_repo import DosRepo
+from ip_access_manager.manager import IPAccessManager
 from model.detection import Detection, ModuleName
 from model.packet import Packet
 from model.persistent_stats import DosPersistentStats
@@ -38,10 +39,11 @@ class DosRunningStats(RunningStatsAccumulator):
 
     # returns false when rules are not exceeded and true when exceeded (dos detected)
     def check_rules(self, address: str, dosModuleConf: DoSModuleConf) -> bool:
-        # if self.no_counter >= dosModuleConf.maxPackets or self.size_counter >= dosModuleConf.maxDataKB * 1000:
-        #     return True
-        # else:
-        return False
+        stats_for_address=self.stats_db[address]
+        if stats_for_address.packets_no >= dosModuleConf.maxPackets or stats_for_address.packets_size >= dosModuleConf.maxDataKB * 1000:
+            return True
+        else:
+            return False
 
     def calc_mean(self) -> DosPersistentStats:
         total = len(self.stats_db)
@@ -68,6 +70,7 @@ class DosAttackDetector(AbstractAnalysePackets):
         self.stats_repo = None
         self.config = dos_module_conf
         self.stats = DosRunningStats.init(datetime.now(), dos_module_conf.periodicity)
+        self.ip_manager = IPAccessManager()
 
     def init(self):
         self.stats_repo = DosRepo(self.db_config)
@@ -96,10 +99,11 @@ class DosAttackDetector(AbstractAnalysePackets):
             if self.stats.check_rules(packet.from_ip, self.config):
                 detection = Detection(
                     detection_time=datetime.now(),
-                    attacker_ip_address=packet.to_ip,
+                    attacker_ip_address=packet.from_ip,
                     module_name=ModuleName.DOS_MODULE,
                     note="Attacked port: {}".format(str(packet.to_port))
                 )
                 self.repo.add(detection)
+                self.ip_manager.block_access_from_ip(packet.from_ip)
         except Exception as msg:
             log_to_file("error in dos scan: " + str(msg))

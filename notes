@@ -3,3 +3,5 @@ https://www.daniweb.com/programming/software-development/threads/515839/question
 https://medium.com/kernel-space/unpacking-a-raw-packet-network-packet-part-2-de0ac30e4935
 
 https://www.giac.org/paper/gsec/1985/stealth-port-scanning-methods/103446
+
+ps -aux | grep python | grep "run.py" | awk '{print $2}' | xargs sudo kill -9
