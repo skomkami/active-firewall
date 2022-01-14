@@ -26,6 +26,25 @@ class Periodicity:
             unit_to_seconds = 60 * 60 * 24
         return unit_to_seconds * self.multiplier
 
+
+class ServiceConfig:
+    enabled = True
+    attemptLimit = 100
+
+
+class Services:
+    ssh = ServiceConfig()
+    apache2 = ServiceConfig()
+    available_services = {
+        'ssh': ssh,
+        'apache2': apache2
+    }
+
+    def __iter__(self):
+        for name, service in self.available_services.items():
+            yield name, service
+
+
 class DBConnectionConf:
     host = 'localhost'
     user = 'postgres'
@@ -41,10 +60,9 @@ class DoSModuleConf:
 
 
 class BruteForceModuleConf:
-    enabled = True
     frequency = 100
-    attemptLimit = 100
     periodicity = Periodicity()
+    services = Services()
 
 
 class PortScannerModuleConf:
@@ -74,7 +92,12 @@ def readConf(path='config.json') -> AppConfig:
         },
         "bfModuleConf": {
             "py/object": "config.config.BruteForceModuleConf",
-            "periodicity": {"py/object": "config.config.Periodicity"}
+            "periodicity": {"py/object": "config.config.Periodicity"},
+            "services": {
+                "py/object": "config.config.Services",
+                "ssh": {"py/object": "config.config.Service"},
+                "apache2": {"py/object": "config.config.Service"}
+            }
         },
         "portScannerConf": {
             "py/object": "config.config.PortScannerModuleConf",
