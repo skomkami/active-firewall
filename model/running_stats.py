@@ -46,6 +46,7 @@ class RunningStatsAccumulator(ABC):
     def forward(self, to_date: datetime) -> List[TimeWindow]:
         """Adjust window to to_date and return empty TimeWindow-s between."""
         empty_windows: List[TimeWindow] = []
+        self.since += timedelta(seconds=self.periodicity.seconds())
         while self.until() < to_date:
             new_window = TimeWindow(self.since, self.until())
             empty_windows.append(new_window)
