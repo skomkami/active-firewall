@@ -11,8 +11,9 @@ from model.running_stats import ModuleStats, RunningStatsAccumulator
 from dataclasses import dataclass
 from datetime import datetime
 from functools import reduce
+from model.timewindow import TimeWindow
 
-from utils.utils import debug
+from utils.log import log_to_file
 
 
 @dataclass
@@ -31,7 +32,7 @@ class PortScanningRunningStats(RunningStatsAccumulator):
 
     @staticmethod
     def init(date: datetime, periodicity: Periodicity):
-        new_acc = PortScanningRunningStats(since=date, statsDb={}, periodicity=periodicity)
+        new_acc = PortScanningRunningStats(since=date, stats_db={}, periodicity=periodicity)
         return new_acc
 
     # returns false when rules are not exceeded and true when exceeded (PortScanning detected)
@@ -42,21 +43,19 @@ class PortScanningRunningStats(RunningStatsAccumulator):
         return False
 
     def calc_mean(self) -> PortScanningPersistentStats:
-        total = len(self.statsDb)
+        total = len(self.stats_db)
         if total > 0:
-            stats_sum = reduce(lambda a, b: a.plus(b), self.statsDb.values())
+            stats_sum = reduce(lambda a, b: a.plus(b), self.stats_db.values())
             mean_stats = PortScanningPersistentStats(
                 id=None,
-                time_window_start=self.since,
-                time_window_end=self.until(),
+                time_window=TimeWindow(self.since, self.until()),
                 mean_scans_per_addr=stats_sum.scan_tries / total
             )
             return mean_stats
         else:
             return PortScanningPersistentStats(
                 id=None,
-                time_window_start=self.since,
-                time_window_end=self.until(),
+                time_window=TimeWindow(self.since, self.until()),
                 mean_scans_per_addr=0
             )
 
@@ -99,16 +98,18 @@ class PortScanningDetector(AbstractAnalysePackets):
                     if not valid:
                         mean = self.stats.calc_mean()
                         empty_windows = self.stats.forward(datetime.now())
-                        empty_stats = list(
+                        up_to_now_stats = list(
                             map(
                                 lambda tw: PortScanningPersistentStats(id=None, time_window=tw),
                                 empty_windows
                             )
                         )
-                        self.stats_repo.add_many([mean].extend(empty_stats))
+                        
+                        up_to_now_stats.insert(0, mean)
+                        self.stats_repo.add_many(up_to_now_stats)
 
                     packet_stats = PortScanningStats(scan_tries=1)
                     self.stats.plus(packet.to_ip, packet_stats)
 
         except Exception as msg:
-            debug("error in port scanning scan: " + str(msg))
+            log_to_file("error in port scanning scan: " + str(msg))

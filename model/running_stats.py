@@ -7,6 +7,7 @@ from typing import List
 
 from config.config import Periodicity
 from model.timewindow import TimeWindow
+from utils.log import log_to_file
 
 
 class ModuleStats(ABC):
@@ -18,7 +19,7 @@ class ModuleStats(ABC):
 class RunningStatsAccumulator(ABC):
     since: datetime
     # address:str -> ModuleStats TODO typing
-    statsDb: dict
+    stats_db: dict
     periodicity: Periodicity
 
     @abstractmethod
@@ -26,14 +27,14 @@ class RunningStatsAccumulator(ABC):
         raise NotImplementedError
 
     def reset(self, date: datetime):
-        self.statsDb = {}
+        self.stats_db = {}
         self.since = date
 
     def until(self) -> datetime:
         return self.since + timedelta(seconds=self.periodicity.seconds()) - timedelta(microseconds=1)
 
     def plus(self, address: str, other: ModuleStats):
-        self.statsDb.setdefault(address, self.empty_stats()).plus(other)
+        self.stats_db.setdefault(address, self.empty_stats()).plus(other)
 
     def check_validity(self) -> bool:
         now = datetime.now()
@@ -49,4 +50,5 @@ class RunningStatsAccumulator(ABC):
             new_window = TimeWindow(self.since, self.until())
             empty_windows.append(new_window)
             self.since += timedelta(seconds=self.periodicity.seconds())
+        log_to_file(str(empty_windows))
         return empty_windows

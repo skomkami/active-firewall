@@ -11,7 +11,8 @@ from model.detection import Detection, ModuleName
 from model.packet import Packet
 from model.persistent_stats import DosPersistentStats
 from model.running_stats import RunningStatsAccumulator, ModuleStats
-from utils.utils import debug
+from model.timewindow import TimeWindow
+from utils.log import log_to_file
 
 
 @dataclass
@@ -32,7 +33,7 @@ class DosRunningStats(RunningStatsAccumulator):
 
     @staticmethod
     def init(date: datetime, periodicity: Periodicity):
-        new_acc = DosRunningStats(since=date, statsDb={}, periodicity=periodicity)
+        new_acc = DosRunningStats(since=date, stats_db={}, periodicity=periodicity)
         return new_acc
 
     # returns false when rules are not exceeded and true when exceeded (dos detected)
@@ -43,16 +44,22 @@ class DosRunningStats(RunningStatsAccumulator):
         return False
 
     def calc_mean(self) -> DosPersistentStats:
-        total = len(self.statsDb)
-        stats_sum = reduce(lambda a, b: a.plus(b), self.statsDb.values())
-        mean_stats = DosPersistentStats(
-            id=None,
-            time_window_start=self.since,
-            time_window_end=datetime.now(),
-            mean_packets_per_addr=stats_sum.packets_no/total,
-            mean_packets_size_per_addr=stats_sum.packets_size/total
-        )
-        return mean_stats
+        total = len(self.stats_db)
+        time_window=TimeWindow(start=self.since, end = self.until())
+        if total > 0:
+            stats_sum = reduce(lambda a, b: a.plus(b), self.stats_db.values())
+            mean_stats = DosPersistentStats(
+                id=None,
+                time_window=time_window,
+                mean_packets_per_addr=stats_sum.packets_no/total,
+                mean_packets_size_per_addr=stats_sum.packets_size/total
+            )
+            return mean_stats
+        else:
+            return DosPersistentStats(
+                id=None,
+                time_window=time_window
+            )
 
 
 class DosAttackDetector(AbstractAnalysePackets):
@@ -74,13 +81,14 @@ class DosAttackDetector(AbstractAnalysePackets):
             if not valid:
                 mean = self.stats.calc_mean()
                 empty_windows = self.stats.forward(datetime.now())
-                empty_stats = list(
+                up_to_now_stats = list(
                     map(
                         lambda tw: DosPersistentStats(id=None, time_window=tw),
                         empty_windows
                     )
                 )
-                self.stats_repo.add_many([mean].extend(empty_stats))
+                up_to_now_stats.insert(0, mean)
+                self.stats_repo.add_many(up_to_now_stats)
 
             packet_stats = DosStats(1, packet.size)
             self.stats.plus(packet.from_ip, packet_stats)
@@ -94,4 +102,4 @@ class DosAttackDetector(AbstractAnalysePackets):
                 )
                 self.repo.add(detection)
         except Exception as msg:
-            debug("error in dos scan: " + str(msg))
+            log_to_file("error in dos scan: " + str(msg))

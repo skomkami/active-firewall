@@ -3,7 +3,7 @@ from typing import Tuple, List
 import psycopg2
 
 from config.config import DBConnectionConf
-from utils.utils import debug
+from utils.log import log_to_file
 from abc import abstractmethod
 
 
@@ -20,7 +20,7 @@ class Repo:
             )
 
         except (Exception, psycopg2.DatabaseError) as error:
-            debug(str(error))
+            log_to_file(str(error))
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.conn is not None:
@@ -38,7 +38,7 @@ class Repo:
         self.conn.commit()
 
     def add_many(self, entities: List[object]):
-        commands = map(lambda ent: self.build_insert_query(ent), entities)
+        commands = list(map(lambda ent: self.build_insert_query(ent), entities))
         cur = self.conn.cursor()
         for command in commands:
             cur.execute(command)

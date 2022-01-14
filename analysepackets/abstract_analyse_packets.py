@@ -7,7 +7,7 @@ from collections import OrderedDict
 from config.config import DBConnectionConf
 from database.detections_repo import DetectionRepo
 from model.packet import Packet
-from utils.utils import debug
+from utils.log import log_to_file
 
 
 class AbstractAnalysePackets(ABC):
@@ -16,10 +16,10 @@ class AbstractAnalysePackets(ABC):
             self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
         except socket.error as msg:
             # TODO lepsza obsługa błędów
-            debug('[*]Socket can\'t be created! Error Code : ' + str(msg[0]) + ' Error Message ' + msg[1])
+            log_to_file('[*]Socket can\'t be created! Error Code : ' + str(msg[0]) + ' Error Message ' + msg[1])
             sys.exit()
         except AttributeError:
-            debug('[*]Socket can\'t be created! Because of Attribute error')
+            log_to_file('[*]Socket can\'t be created! Because of Attribute error')
             sys.exit()
         self.db_config = db_config
         self.stats = None
@@ -50,7 +50,7 @@ class AbstractAnalysePackets(ABC):
     def run(self):
         self.repo = DetectionRepo(self.db_config)
         self.init()
-        debug(self.module_name() + " started")
+        log_to_file(self.module_name() + " started")
         while True:
             try:
                 # https://en.wikipedia.org/wiki/File:Ethernet_Type_II_Frame_format.svg
@@ -64,7 +64,7 @@ class AbstractAnalysePackets(ABC):
                 # ether_type in network byte order
                 (dest_mac, src_mac, ether_type) = eth_header
             except:
-                debug("Error in analyser")
+                log_to_file("Error in analyser")
                 pass
 
             # ipV4 https://en.wikipedia.org/wiki/EtherType
