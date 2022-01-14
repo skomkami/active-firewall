@@ -1,10 +1,10 @@
-from ssh_login_detector.detector import SSHLoginDetector
+from detectors.apache2_login_detector import Apache2LoginDetector
 from config.config import BruteForceModuleConf
 from config.config import DBConnectionConf
 
 
 def main() -> None:
-    detector = SSHLoginDetector(DBConnectionConf)
+    detector = Apache2LoginDetector(DBConnectionConf)
     detector.run()
     print('Done!')
 

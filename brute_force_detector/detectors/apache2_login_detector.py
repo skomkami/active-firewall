@@ -17,8 +17,8 @@ class ErrorMessages(Enum):
 
 
 class LinuxParameters(Enum):
-    LOG_FILE_PATH = '/var/log/auth.log'
-    GET_LOGS_COMMAND = "awk '/^{from_date}.*/,/$1>=start/' {file_path} | grep -a 'Failed password for'"
+    LOG_FILE_PATH = '/var/log/apache2/access.log'
+    GET_LOGS_COMMAND = "awk '/^.*{from_date}.*/,/$1>=start/' {file_path} | grep -a 401"
 
 
 @dataclass
@@ -37,7 +37,7 @@ class IPInfo:
                f'Address is suspicious: {"yes" if self.suspicious_address else "no"}\n'
 
 
-class SSHLoginDetector:
+class Apache2LoginDetector:
 
     def __init__(self, db_config: DBConnectionConf, frequency: int = 20, attempt_limit: int = 10):
         self.db_config = db_config
@@ -68,14 +68,9 @@ class SSHLoginDetector:
 
     @staticmethod
     def get_log_timestamp(log: str) -> datetime:
-        raw_timestamp = ' '.join(log.split()[0:3])
-        year = datetime.now().year
+        raw_timestamp = findall(r'\d+/\w+/\d+:\d+:\d+:\d+', log)[0]
 
-        return datetime.strptime(f'{year} {raw_timestamp}', '%Y %b %d %H:%M:%S')
-
-    @staticmethod
-    def get_log_port(log: str) -> str:
-        return log.split()[-2]
+        return datetime.strptime(raw_timestamp, '%d/%b/%Y:%H:%M:%S')
 
     @staticmethod
     def get_log_attempts_number(log: str) -> int:
@@ -99,9 +94,13 @@ class SSHLoginDetector:
 
     def parse_logs(self, logs: list) -> None:
         for log in logs:
-            [ip] = findall(r'[0-9]+(?:\.[0-9]+){3}', log)
+            try:
+                [ip] = findall(r'[0-9]+(?:\.[0-9]+){3}', log[:15])
+            except ValueError:
+                # There is no client IP in log - most likely server IP was captured.
+                continue
             timestamp = self.get_log_timestamp(log)
-            port = self.get_log_port(log)
+            port = '80'
 
             self.parsed_logs.setdefault(ip, IPInfo(ip))
             self.parsed_logs[ip].attempts_number += self.get_log_attempts_number(log)
@@ -122,11 +121,13 @@ class SSHLoginDetector:
             response = self.run_terminal_command(command)
             logs = response.split('\n')
             if len(logs) <= 1:
-                # No failed or new SSH login attempts detected.
+                # No failed or new Apache2 login attempts detected.
                 sleep(self.delay)
                 continue
             if previous_log_timestamp:
                 logs = logs[1:]
-            previous_log_timestamp = self.get_log_timestamp(logs[-1]).strftime('%b %d %H:%M:%S')
+            self.get_log_timestamp(logs[-1])
+            previous_log_timestamp = self.get_log_timestamp(logs[-1]).strftime(r'%d\/%b\/%Y:%H:%M:%S')
             self.parse_logs(logs)
+            print(self.parsed_logs)
             sleep(self.delay)

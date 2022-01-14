@@ -7,7 +7,7 @@ from config.config import AppConfig, readConf
 from dos.dos_scan_detector import DosAttackDetector
 from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
-from brute_force_detector.ssh_login_detector.detector import SSHLoginDetector
+from brute_force_detector.detectors.ssh_login_detector import SSHLoginDetector
 
 
 def runProcesses(config: AppConfig) -> List[Process]:
