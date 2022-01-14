@@ -9,6 +9,7 @@ from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
 from brute_force_detector.ssh_login_detector.detector import SSHLoginDetector
 
+
 def runProcesses(config: AppConfig) -> List[Process]:
     portScanningDetectionProc = None
     dosModuleProc = None
@@ -16,7 +17,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
     if config.portScannerConf.enabled:
         psConfig = config.portScannerConf
         lanIp = psConfig.lanIp
-        detector = PortScanningDetector(config.dbConnectionConf, lanIp)
+        detector = PortScanningDetector(config.dbConnectionConf, psConfig, lanIp)
         portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:

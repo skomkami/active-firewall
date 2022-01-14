@@ -1,67 +1,99 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from config.config import DBConnectionConf, DoSModuleConf, Periodicity, PeriodicityUnit
-from database.detections_repo import debug
-from model.detection import Detection, ModuleName
+from datetime import datetime
+from functools import reduce
+
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
+from config.config import DBConnectionConf, DoSModuleConf, Periodicity
+from database.dos_repo import DosRepo
+from model.detection import Detection, ModuleName
 from model.packet import Packet
+from model.persistent_stats import DosPersistentStats
+from model.running_stats import RunningStatsAccumulator, ModuleStats
+from model.timewindow import TimeWindow
+from utils.log import log_to_file
+
 
 @dataclass
-class RulesAccumulator:
-    no_counter: int
-    size_counter:int
-    since: datetime
+class DosStats(ModuleStats):
+    packets_no: int = 0
+    packets_size: int = 0
 
-    def reset(self, date: datetime):
-        self.no_counter = 0
-        self.size_counter = 0
-        self.since = date
-    
-    def init(date: datetime):
-        new_acc = RulesAccumulator(no_counter=0, size_counter=0, since=date)
-        new_acc.since = date
+    def plus(self, other: DosStats) -> DosStats:
+        self.packets_no += 1
+        self.packets_size += other.packets_size
+        return self
+
+
+@dataclass
+class DosRunningStats(RunningStatsAccumulator):
+    def empty_stats(self) -> DosStats:
+        return DosStats()
+
+    @staticmethod
+    def init(date: datetime, periodicity: Periodicity):
+        new_acc = DosRunningStats(since=date, stats_db={}, periodicity=periodicity)
         return new_acc
-    
-    def plus(self, packet: Packet):
-        self.no_counter += 1
-        self.size_counter += packet.size
-    
-    # resets counters when time expires
-    def check_validity(self, dosModuleConf: DoSModuleConf) -> bool:
-        now = datetime.now()
-        counter_valid_to = self.since + timedelta(seconds = seconds_of(dosModuleConf.periodicity))
-        if now > counter_valid_to:
-            self.reset(now)
-    
-    # returns false when rules are not exceeded and true when exceeded (dos detected)
-    def check_rules(self, dosModuleConf: DoSModuleConf) -> bool:
-        if self.no_counter >= dosModuleConf.maxPackets or self.size_counter >= dosModuleConf.maxDataKB * 1000:
-            return True
-        else:
-            return False
 
-def seconds_of(periodicity: Periodicity):
-    unit_to_seconds = 1
-    if periodicity['unit'] == PeriodicityUnit.Minute: unit_to_seconds = 60
-    elif periodicity['unit'] == PeriodicityUnit.Hour: unit_to_seconds = 60 * 60
-    else: unit_to_seconds = 60 * 60 * 24
-    return unit_to_seconds * periodicity['multiplier']
+    # returns false when rules are not exceeded and true when exceeded (dos detected)
+    def check_rules(self, address: str, dosModuleConf: DoSModuleConf) -> bool:
+        # if self.no_counter >= dosModuleConf.maxPackets or self.size_counter >= dosModuleConf.maxDataKB * 1000:
+        #     return True
+        # else:
+        return False
+
+    def calc_mean(self) -> DosPersistentStats:
+        total = len(self.stats_db)
+        time_window=TimeWindow(start=self.since, end = self.until())
+        if total > 0:
+            stats_sum = reduce(lambda a, b: a.plus(b), self.stats_db.values())
+            mean_stats = DosPersistentStats(
+                id=None,
+                time_window=time_window,
+                mean_packets_per_addr=stats_sum.packets_no/total,
+                mean_packets_size_per_addr=stats_sum.packets_size/total
+            )
+            return mean_stats
+        else:
+            return DosPersistentStats(
+                id=None,
+                time_window=time_window
+            )
+
 
 class DosAttackDetector(AbstractAnalysePackets):
-    def __init__(self, dbConfig: DBConnectionConf, dosModuleConf: DoSModuleConf):
-        super().__init__(dbConfig)
-        self.config = dosModuleConf
-        self.packetsDb = {}
+    def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf):
+        super().__init__(db_config)
+        self.stats_repo = None
+        self.config = dos_module_conf
+        self.stats = DosRunningStats.init(datetime.now(), dos_module_conf.periodicity)
+
+    def init(self):
+        self.stats_repo = DosRepo(self.db_config)
 
     def module_name(self):
         return "Dos attack"
 
     def process_packet(self, packet: Packet):
         try:
-            self.packetsDb.setdefault(packet.from_ip, RulesAccumulator.init(datetime.now()))
-            self.packetsDb[packet.from_ip].plus(packet)
-            self.packetsDb[packet.from_ip].check_validity(self.config)
-            if self.packetsDb[packet.from_ip].check_rules(self.config):
+            valid = self.stats.check_validity()
+            if not valid:
+                mean = self.stats.calc_mean()
+                empty_windows = self.stats.forward(datetime.now())
+                up_to_now_stats = list(
+                    map(
+                        lambda tw: DosPersistentStats(id=None, time_window=tw),
+                        empty_windows
+                    )
+                )
+                up_to_now_stats.insert(0, mean)
+                self.stats_repo.add_many(up_to_now_stats)
+
+            packet_stats = DosStats(1, packet.size)
+            self.stats.plus(packet.from_ip, packet_stats)
+
+            if self.stats.check_rules(packet.from_ip, self.config):
                 detection = Detection(
                     detection_time=datetime.now(),
                     attacker_ip_address=packet.to_ip,
@@ -70,5 +102,4 @@ class DosAttackDetector(AbstractAnalysePackets):
                 )
                 self.repo.add(detection)
         except Exception as msg:
-            debug("error in dos scan: " + str(msg))
-
+            log_to_file("error in dos scan: " + str(msg))

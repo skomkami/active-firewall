@@ -1,8 +1,8 @@
 import json
-import jsonpickle
-
 from copy import deepcopy
 from enum import Enum
+
+import jsonpickle
 
 
 class PeriodicityUnit(Enum):
@@ -15,6 +15,16 @@ class PeriodicityUnit(Enum):
 class Periodicity:
     unit = PeriodicityUnit.Minute
     multiplier = 1
+
+    def seconds(self):
+        unit_to_seconds = 1
+        if self.unit == PeriodicityUnit.Minute:
+            unit_to_seconds = 60
+        elif self.unit == PeriodicityUnit.Hour:
+            unit_to_seconds = 60 * 60
+        elif self.unit == PeriodicityUnit.Day:
+            unit_to_seconds = 60 * 60 * 24
+        return unit_to_seconds * self.multiplier
 
 class DBConnectionConf:
     host = 'localhost'
@@ -41,6 +51,7 @@ class PortScannerModuleConf:
     enabled = True
     blockAfterTries = 3
     lanIp = "127.0.0.1"
+    periodicity = Periodicity
 
 
 class AppConfig:
@@ -57,9 +68,18 @@ def readConf(path='config.json') -> AppConfig:
     configTypesInfoDict = {
         "py/object": "config.config.AppConfig",
         "dbConnectionConf": {"py/object": "config.config.DBConnectionConf"},
-        "dosModuleConf": {"py/object": "config.config.DoSModuleConf"},
-        "bfModuleConf": {"py/object": "config.config.BruteForceModuleConf"},
-        "portScannerConf": {"py/object": "config.config.PortScannerModuleConf"}
+        "dosModuleConf": {
+            "py/object": "config.config.DoSModuleConf",
+            "periodicity": {"py/object": "config.config.Periodicity"}
+        },
+        "bfModuleConf": {
+            "py/object": "config.config.BruteForceModuleConf",
+            "periodicity": {"py/object": "config.config.Periodicity"}
+        },
+        "portScannerConf": {
+            "py/object": "config.config.PortScannerModuleConf",
+            "periodicity": {"py/object": "config.config.Periodicity"}
+        }
     }
     try:
         with open(path, 'r') as file:
