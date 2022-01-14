@@ -65,6 +65,7 @@ class PortScanningDetector(AbstractAnalysePackets):
         super().__init__(db_config)
         self.config = port_scanning_module_conf
         self.halfscandb = {}
+        self.synackdb = {}
         self.lanIp = lanIp
         self.stats_repo = None
         self.stats = PortScanningRunningStats.init(datetime.now(), port_scanning_module_conf.periodicity)
@@ -74,6 +75,24 @@ class PortScanningDetector(AbstractAnalysePackets):
 
     def module_name(self):
         return "Port Scanning"
+
+    def on_scan_detected(self, scan_from_ip: str):
+        valid = self.stats.check_validity()
+        if not valid:
+            mean = self.stats.calc_mean()
+            empty_windows = self.stats.forward(datetime.now())
+            up_to_now_stats = list(
+                map(
+                    lambda tw: PortScanningPersistentStats(id=None, time_window=tw),
+                    empty_windows
+                )
+            )
+
+            up_to_now_stats.insert(0, mean)
+            self.stats_repo.add_many(up_to_now_stats)
+
+        packet_stats = PortScanningStats(scan_tries=1)
+        self.stats.plus(scan_from_ip, packet_stats)
 
     def process_packet(self, packet: Packet):
         try:
@@ -85,31 +104,21 @@ class PortScanningDetector(AbstractAnalysePackets):
             elif "RST" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
                 tmp = p_reverse_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.halfscandb:
-                    del self.halfscandb[p_reverse_direction + "_" + str(packet.ack_no - 1)]
-                    # detection = Detection(
-                    #     detection_time=datetime.now(),
-                    #     attacker_ip_address=packet.to_ip,
-                    #     module_name=ModuleName.PORTSCANNING_MODULE,
-                    #     note="Attacked port: {}".format(str(packet.to_port))
-                    # )
-                    # self.repo.add(detection)
-
-                    valid = self.stats.check_validity()
-                    if not valid:
-                        mean = self.stats.calc_mean()
-                        empty_windows = self.stats.forward(datetime.now())
-                        up_to_now_stats = list(
-                            map(
-                                lambda tw: PortScanningPersistentStats(id=None, time_window=tw),
-                                empty_windows
-                            )
-                        )
-                        
-                        up_to_now_stats.insert(0, mean)
-                        self.stats_repo.add_many(up_to_now_stats)
-
-                    packet_stats = PortScanningStats(scan_tries=1)
-                    self.stats.plus(packet.to_ip, packet_stats)
+                    del self.halfscandb[tmp]
+                    self.on_scan_detected(packet.to_ip)
+            elif "SYN" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
+                tmp = p_reverse_direction + "_" + str(packet.ack_no)
+                self.synackdb[tmp] = p_direction + "_SYN_ACK_" + str(packet.seq_no) + "_" + str(packet.ack_no)
+                del self.halfscandb[tmp]
+            elif "RST" in packet.flags and len(packet.flags) == 1:
+                tmp = p_direction + "_" + str(packet.ack_no - 1)
+                if tmp in self.synackdb:
+                    del self.synackdb[tmp]
+                    self.on_scan_detected(packet.from_ip)
+            elif "ACK" in packet.flags and len(packet.flags) == 1:
+                tmp = p_direction + "_" + str(packet.ack_no - 1)
+                if tmp in self.synackdb:
+                    del self.synackdb[tmp]
 
         except Exception as msg:
             log_to_file("error in port scanning scan: " + str(msg))
