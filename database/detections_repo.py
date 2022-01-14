@@ -11,9 +11,9 @@ class DetectionRepo(Repo):
         )
         return command
 
-    def build_get_all_query(self, limit=10, offset=0) -> str:
-        command = "SELECT detection_time, attacker_ip_address, module_name, note, detection_id FROM detections ORDER BY detection_time LIMIT {} OFFSET {}".format(
-            limit, offset)
+    def build_get_all_query(self, limit=10, offset=0, where_clause='detection_id IS NOT NULL', order='ASC') -> str:
+        command = "SELECT detection_time, attacker_ip_address, module_name, note, detection_id FROM detections WHERE {} ORDER BY detection_time {} LIMIT {} OFFSET {}".format(
+            where_clause, order, limit, offset)
         return command
 
     def entity_from_tuple(self, tuple: Tuple) -> Detection:

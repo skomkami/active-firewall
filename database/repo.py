@@ -18,7 +18,6 @@ class Repo:
                 host=dbConnectionConf.host,
                 port=dbConnectionConf.port
             )
-
         except (Exception, psycopg2.DatabaseError) as error:
             log_to_file(str(error))
 
@@ -49,11 +48,11 @@ class Repo:
         raise NotImplementedError
 
     @abstractmethod
-    def build_get_all_query(self, limit=10, offset=0) -> str:
+    def build_get_all_query(self, limit=10, offset=0, where_clause='detection_id IS NOT NULL', order='ASC') -> str:
         raise NotImplementedError
 
-    def get_all(self, limit=10, offset=0):
-        command = self.build_get_all_query(limit, offset)
+    def get_all(self, limit=10, offset=0, where_clause='detection_id IS NOT NULL', order='ASC'):
+        command = self.build_get_all_query(limit, offset, where_clause, order)
         cur = self.conn.cursor()
         cur.execute(command)
         content = cur.fetchall()

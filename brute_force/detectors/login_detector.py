@@ -9,6 +9,7 @@ from platform import system
 from database.detections_repo import DetectionRepo
 from model.detection import Detection
 from config.config import ServiceConfig
+from model.detection import ModuleName
 
 
 class ErrorMessages(Enum):
@@ -33,13 +34,14 @@ class IPInfo:
 
 class LoginDetector(ABC):
 
-    def __init__(self, config: ServiceConfig):
+    def __init__(self, name: ModuleName, config: ServiceConfig, repo: DetectionRepo, timestamp_format: str):
         self.__check_os()
-        self.attempt_limit = config.attemptLimit or 10
+        self.name = name
+        self.attempt_limit = config.attemptLimit
+        self.repo = repo
         self.parsed_logs = dict()
-        self.previous_log_timestamp = ''
-        self.repo = None
-        self.name = None
+        self.timestamp_format = timestamp_format
+        self.previous_log_timestamp = self.get_most_recent_log_timestamp()
         self.get_logs_command = None
         self.log_file_path = None
 
@@ -85,6 +87,13 @@ class LoginDetector(ABC):
             note=f'Attacked port: {port}, attempt number: {attempt_number}'
         )
         self.repo.add(detection)
+
+    def get_most_recent_log_timestamp(self):
+        latest_log = self.repo.get_all(1, 0, f"module_name='{self.name.value}'", 'DESC')
+        if not latest_log:
+            return ''
+        return latest_log[0].detection_time.strftime(self.timestamp_format)
+
 
     @staticmethod
     def run_terminal_command(command: str) -> str:

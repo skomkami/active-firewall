@@ -9,15 +9,11 @@ from database.detections_repo import DetectionRepo
 from config.config import ServiceConfig
 
 
-def log(text: str):
-    with open('brute_force/logs.txt', 'a') as f:
-        print(text, file=f)
-
-
 class BruteForceDetector:
 
     def __init__(self, db_config: DBConnectionConf, config: BruteForceModuleConf):
         self.db_config = db_config
+        self.repo = DetectionRepo(self.db_config)
         self.config = config
         self.delay = 1/self.config.frequency
         self.detectors = self.__get_detectors()
@@ -40,13 +36,12 @@ class BruteForceDetector:
 
         return detectors
 
-    @staticmethod
-    def __get_single_detector(name: str, config: ServiceConfig) -> LoginDetector:
+    def __get_single_detector(self, name: str, config: ServiceConfig) -> LoginDetector:
         name = name.lower()
         if name == 'ssh':
-            detector = SSHLoginDetector(config)
+            detector = SSHLoginDetector(config, self.repo)
         elif name == 'apache2':
-            detector = Apache2LoginDetector(config)
+            detector = Apache2LoginDetector(config, self.repo)
         else:
             detector = None
 

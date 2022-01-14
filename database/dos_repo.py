@@ -13,9 +13,9 @@ class DosRepo(Repo):
         )
         return command
 
-    def build_get_all_query(self, limit=10, offset=0) -> str:
-        command = "SELECT id, time_window_start, time_window_end, mean_packets_per_addr, mean_packets_size_per_addr FROM dos_module_stats ORDER BY detection_time LIMIT {} OFFSET {}".format(
-            limit, offset)
+    def build_get_all_query(self, limit=10, offset=0, where_clause='id IS NOT NULL', order='ASC') -> str:
+        command = "SELECT id, time_window_start, time_window_end, mean_packets_per_addr, mean_packets_size_per_addr FROM dos_module_stats WHERE {} ORDER BY detection_time {} LIMIT {} OFFSET {}".format(
+            where_clause, order, limit, offset)
         return command
 
     def entity_from_tuple(self, tuple: Tuple) -> DosPersistentStats:

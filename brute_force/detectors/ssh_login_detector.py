@@ -2,17 +2,17 @@ from datetime import datetime
 from re import findall
 
 from brute_force.detectors.login_detector import LoginDetector
+from database.detections_repo import DetectionRepo
 from model.detection import ModuleName
 from config.config import ServiceConfig
 
 
 class SSHLoginDetector(LoginDetector):
 
-    def __init__(self, config: ServiceConfig):
-        super().__init__(config)
+    def __init__(self, config: ServiceConfig, repo: DetectionRepo):
+        super().__init__(ModuleName.SSH_LOGIN_DETECTOR, config, repo, '%b %d %H:%M:%S')
         self.log_file_path = '/var/log/auth.log'
         self.get_logs_command = "awk '/^{from_date}.*/,/$1>=start/' {file_path} | grep -a 'Failed password for'"
-        self.name = ModuleName.SSH_LOGIN_DETECTOR
 
     @staticmethod
     def get_log_timestamp(log: str) -> datetime:
@@ -22,7 +22,7 @@ class SSHLoginDetector(LoginDetector):
         return datetime.strptime(f'{year} {raw_timestamp}', '%Y %b %d %H:%M:%S')
 
     def get_previous_log_timestamp(self, log: str) -> str:
-        return self.get_log_timestamp(log).strftime('%b %d %H:%M:%S')
+        return self.get_log_timestamp(log).strftime(self.timestamp_format)
 
     @staticmethod
     def get_ip(log: str) -> str:

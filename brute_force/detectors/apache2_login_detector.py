@@ -2,17 +2,17 @@ from datetime import datetime
 from re import findall
 
 from brute_force.detectors.login_detector import LoginDetector
+from database.detections_repo import DetectionRepo
 from model.detection import ModuleName
 from config.config import ServiceConfig
 
 
 class Apache2LoginDetector(LoginDetector):
 
-    def __init__(self, config: ServiceConfig):
-        super().__init__(config)
+    def __init__(self, config: ServiceConfig, repo: DetectionRepo):
+        super().__init__(ModuleName.APACHE2_LOGIN_DETECTOR, config, repo, r'%d\/%b\/%Y:%H:%M:%S')
         self.log_file_path = '/var/log/apache2/access.log'
         self.get_logs_command = "awk '/^.*{from_date}.*/,/$1>=start/' {file_path} | grep -a 401"
-        self.name = ModuleName.APACHE2_LOGIN_DETECTOR
 
     @staticmethod
     def get_log_timestamp(log: str) -> datetime:
@@ -21,7 +21,7 @@ class Apache2LoginDetector(LoginDetector):
         return datetime.strptime(raw_timestamp, '%d/%b/%Y:%H:%M:%S')
 
     def get_previous_log_timestamp(self, log: str) -> str:
-        return self.get_log_timestamp(log).strftime(r'%d\/%b\/%Y:%H:%M:%S')
+        return self.get_log_timestamp(log).strftime(self.timestamp_format)
 
     @staticmethod
     def get_ip(log: str) -> str:
