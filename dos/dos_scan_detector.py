@@ -5,7 +5,8 @@ from datetime import datetime
 from functools import reduce
 
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-from config.config import DBConnectionConf, DoSModuleConf, Periodicity
+from anomaly_detection.detect import AnomalyDetector
+from config.config import DBConnectionConf, DoSModuleConf, Periodicity, AnomalyDetectorConf
 from database.dos_repo import DosRepo
 from ip_access_manager.manager import IPAccessManager
 from model.detection import Detection, ModuleName
@@ -71,11 +72,12 @@ class DosAttackDetector(AbstractAnalysePackets):
     are treated as suspicious traffic.
     """
 
-    def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf):
+    def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf, anomaly_config: AnomalyDetectorConf):
         super().__init__(db_config)
         self.stats_repo = None
         self.config = dos_module_conf
         self.stats = DosRunningStats.init(datetime.now(), dos_module_conf.periodicity)
+        self.anomaly_detector = AnomalyDetector(anomaly_config)
         self.ip_manager = IPAccessManager()
 
     def init(self):
