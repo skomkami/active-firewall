@@ -8,6 +8,7 @@ from dos.dos_scan_detector import DosAttackDetector
 from main.main_menu import MainMenu
 from scanning.port_scanning_detector import PortScanningDetector
 from brute_force.brute_force_detector import BruteForceDetector
+from utils.log import log_to_file
 
 
 def runProcesses(config: AppConfig) -> List[Process]:
@@ -16,8 +17,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
     bruteForceProc = None
     if config.portScannerConf.enabled:
         psConfig = config.portScannerConf
-        lanIp = psConfig.lanIp
-        detector = PortScanningDetector(config.dbConnectionConf, psConfig, lanIp)
+        detector = PortScanningDetector(config.dbConnectionConf, psConfig)
         portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:
@@ -31,12 +31,14 @@ def runProcesses(config: AppConfig) -> List[Process]:
 
     return [portScanningDetectionProc, dosModuleProc, bruteForceProc]
 
+
 def terminate_processes(processes: list) -> list:
     for process in processes:
         if process != None:
             process.terminate()
 
     return processes
+
 
 def main(stdscr):
     config = readConf(getArgs()['config_file'] or 'config.json')
@@ -54,36 +56,43 @@ def main(stdscr):
     current_menu.show(current_row)
 
     while 1:
-        key = stdscr.getch()
-        if key == curses.KEY_UP:
-            current_row -= 1
-        elif key == curses.KEY_DOWN:
-            current_row += 1
-        elif key == curses.KEY_LEFT:
-            if current_page > 0:
-                current_page-=1
-        elif key == curses.KEY_RIGHT and current_menu.has_next_page():
-            current_page+=1
-        elif key == ord('q'):
-            if len(menus_path) > 0:
-                current_menu = menus_path.pop()
+        try:
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                current_row -= 1
+            elif key == curses.KEY_DOWN:
+                current_row += 1
+            elif key == curses.KEY_LEFT:
+                if current_page > 0:
+                    current_page -= 1
+            elif key == curses.KEY_RIGHT and current_menu.has_next_page():
+                current_page += 1
+            elif key == ord('q'):
+                if len(menus_path) > 0:
+                    current_menu = menus_path.pop()
+                else:
+                    terminate_processes(processes)
+                    break
+            elif key == curses.KEY_ENTER or key in [10, 13]:
+                newMenu = current_menu.handle_action(current_row, current_page)
+                if newMenu == current_menu:
+                    pass
+                elif newMenu is None and len(menus_path) > 0:
+                    current_menu = menus_path.pop()
+                elif newMenu is None:
+                    terminate_processes(processes)
+                    break
+                else:
+                    menus_path.append(current_menu)
+                    current_menu = newMenu
+                    #reset row
+                    current_row = 0
             else:
-                terminate_processes(processes)
-                break
-        elif key == curses.KEY_ENTER or key in [10, 13]:
-            newMenu = current_menu.handleAction(current_row, current_page)
-            if newMenu == current_menu:
-                pass
-            elif newMenu == None and len(menus_path) > 0:
-                current_menu = menus_path.pop()
-            elif newMenu == None:
-                terminate_processes(processes)
-                break
-            else:
-                menus_path.append(current_menu)
-                current_menu = newMenu
+                current_menu.handle_custom_action(key, current_row, current_page)
 
-        current_menu.show(current_row, current_page)
+            current_menu.show(current_row, current_page)
+        except Exception as msg:
+            log_to_file("error in menu: " + str(msg))
 
 
 curses.wrapper(main)

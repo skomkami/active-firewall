@@ -1,18 +1,18 @@
 from __future__ import annotations
-from datetime import datetime
-from struct import *
-from config.config import DBConnectionConf, PortScannerModuleConf, Periodicity
-from database.port_scanning_repo import PortScanningRepo
-from model.detection import Detection, ModuleName
-from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-from model.packet import Packet
-from model.persistent_stats import PortScanningPersistentStats
-from model.running_stats import ModuleStats, RunningStatsAccumulator
+
 from dataclasses import dataclass
 from datetime import datetime
 from functools import reduce
-from model.timewindow import TimeWindow
 
+from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
+from config.config import DBConnectionConf, PortScannerModuleConf, Periodicity
+from database.blocked_hosts_repo import BlockedHostRepo
+from database.port_scanning_repo import PortScanningRepo
+from ip_access_manager.manager import IPAccessManager
+from model.packet import Packet
+from model.persistent_stats import PortScanningPersistentStats
+from model.running_stats import ModuleStats, RunningStatsAccumulator
+from model.timewindow import TimeWindow
 from utils.log import log_to_file
 
 
@@ -61,14 +61,15 @@ class PortScanningRunningStats(RunningStatsAccumulator):
 
 
 class PortScanningDetector(AbstractAnalysePackets):
-    def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf, lanIp: str = ""):
+    def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf):
         super().__init__(db_config)
         self.config = port_scanning_module_conf
         self.halfscandb = {}
         self.synackdb = {}
-        self.lanIp = lanIp
         self.stats_repo = None
         self.stats = PortScanningRunningStats.init(datetime.now(), port_scanning_module_conf.periodicity)
+        self.ip_manager = IPAccessManager()
+        self.blocks_repo = BlockedHostRepo(db_config)
 
     def init(self):
         self.stats_repo = PortScanningRepo(self.db_config)

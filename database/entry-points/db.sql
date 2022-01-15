@@ -6,6 +6,14 @@ CREATE TABLE detections (
     note VARCHAR(255)
 );
 
+CREATE TABLE blocked_hosts (
+    block_id SERIAL PRIMARY KEY,
+    ip_address VARCHAR(15) NOT NULL,
+    state_since TIMESTAMP NOT NULL,
+    state VARCHAR(20) NOT NULL,
+    note VARCHAR(255)
+);
+
 CREATE TABLE dos_module_stats (
     id SERIAL PRIMARY KEY,
     time_window_start TIMESTAMP NOT NULL,

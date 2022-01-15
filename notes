@@ -5,3 +5,5 @@ https://medium.com/kernel-space/unpacking-a-raw-packet-network-packet-part-2-de0
 https://www.giac.org/paper/gsec/1985/stealth-port-scanning-methods/103446
 
 ps -aux | grep python | grep "run.py" | awk '{print $2}' | xargs sudo kill -9
+
+https://gist.github.com/garyconstable/5611be3154d8cde9ee28

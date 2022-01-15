@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class AbstractMenu(ABC):
 
     @abstractmethod
-    def menuOptions(self):
+    def menu_options(self):
         return []
 
     @abstractmethod
@@ -13,8 +13,11 @@ class AbstractMenu(ABC):
 
     # it should return entered submenu or None (then app should return to parent menu)
     @abstractmethod
-    def handleAction(self, selected_row, selected_page):
+    def handle_action(self, selected_row, selected_page):
         return None
+
+    def handle_custom_action(self, key, selected_row, selected_page):
+        return
 
     def __init__(self, stdscr):
         self.stdscr = stdscr
@@ -24,6 +27,9 @@ class AbstractMenu(ABC):
         return None
     
     def has_next_page(self):
+        return False
+
+    def has_next_option(self, selected_row):
         return False
 
     def show(self, selected_row, selected_page = 0):

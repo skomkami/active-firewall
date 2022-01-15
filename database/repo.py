@@ -1,3 +1,4 @@
+from logging import logThreads
 from typing import Tuple, List
 
 import psycopg2
@@ -5,7 +6,7 @@ import psycopg2
 from config.config import DBConnectionConf
 from utils.log import log_to_file
 from abc import abstractmethod
-
+import sys
 
 class Repo:
     def __init__(self, dbConnectionConf: DBConnectionConf) -> None:
@@ -21,6 +22,8 @@ class Repo:
             )
         except (Exception, psycopg2.DatabaseError) as error:
             log_to_file(str(error))
+        # except:
+        #     log_to_file("something bad happended. " + sys.exc_info()[0])
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.conn is not None:
