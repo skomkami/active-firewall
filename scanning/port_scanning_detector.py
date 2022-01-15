@@ -95,21 +95,23 @@ class PortScanningDetector(AbstractAnalysePackets):
             up_to_now_stats.insert(0, mean)
             self.stats_repo.add_many(up_to_now_stats)
 
-
         self.anomaly_detector.update_counter()
         anomaly_detector_valid = self.anomaly_detector.check_validity()
         if not anomaly_detector_valid:
             self.anomaly_detector.reset_counter()
 
-            # TODO 1. pobierz ostatnie X średnich z bazy danych
+            # get last X means from database
             limit = self.anomaly_detector.maxCounter
             time_series_training_data = self.stats_repo.get_all(self, limit=limit, order='DESC')
 
-            # TODO 2. podmień w obiekcie anomaly_detector
+            # update time series in anomaly detector object
             self.anomaly_detector.update_time_series(time_series_training_data)
 
-        # TODO 3. wyznacz anomalię dla tego skanu
-        # ...
+        # detect anomaly - TODO: zmienić, przekazywać liczbę zliczonych wystąpień dla tego hosta
+        nr_of_packets = 0 
+        anomaly = self.anomaly_detector(datetime.now(), nr_of_packets)
+        if anomaly:
+            pass
 
 
     def process_packet(self, packet: Packet):

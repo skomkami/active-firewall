@@ -28,69 +28,75 @@ class AnomalyDetector():
             return True
 
     def update_time_series(self, entities: list()):
-        # TODO: przerabiać otrzymane rekordy z bazy danych na DataFrame indeksowany po timestampach
-        
-        pass
 
-    def detect_anomalies(self, timestamp: pd.Timestamp, stats_db: dict()) -> pd.DataFrame:
+        # convert data queried from database to DataFrame object indexed with Timestamps
+        timestamps = []
+        values = []
+        for e in entities:
+            dt = e.time_window.end
+            timestamp = pd.Timestamp(year=dt.date.year, month=dt.date.month, day=dt.date.day, hour=dt.time.hour, minute=dt.time.minute, second=dt.time.second)
+            timestamps.append(timestamp)
+            values.append(e.mean_scans_per_addr)
+        self.time_series = pd.DataFrame(values, index = timestamps, columns =['Total'])
 
-        hosts_to_block = []
-        for host_address in stats_db:
+    def detect_anomalies(self, now: datetime, stats: int) -> bool:
 
-            df = self.time_series.copy()
-            df = df.append(pd.DataFrame({'Total': stats_db[host_address]}, index=[timestamp]))
+        df = self.time_series.copy()
 
-            # scale values
-            scaler = StandardScaler()
-            np_scaled = scaler.fit_transform(df.values.reshape(-1, 1))
-            data = pd.DataFrame(np_scaled)
+        timestamp = pd.Timestamp(year=now.date.year, month=now.date.month, day=now.date.day, hour=now.time.hour, minute=now.time.minute, second=now.time.second)
+        df = df.append(pd.DataFrame({'Total': stats}, index=[timestamp]))
 
-            # train isolation forest
-            model = IsolationForest(contamination=self.outliers_fraction)
-            model.fit(data) 
+        # scale values
+        scaler = StandardScaler()
+        np_scaled = scaler.fit_transform(df.values.reshape(-1, 1))
+        data = pd.DataFrame(np_scaled)
 
-            # get anomalies
-            df['anomaly'] = model.predict(data)
-            df_with_anomaly = df.loc[df['anomaly'] == -1, ['Total']]
+        # train isolation forest
+        model = IsolationForest(contamination=self.outliers_fraction)
+        model.fit(data) 
 
-            if df_with_anomaly.index[-1] == timestamp:
-                if df.iloc[-1]['Total'] > df.iloc[-2]['Total']:
-                    hosts_to_block.append(host_address)
+        # get anomalies
+        df['anomaly'] = model.predict(data)
+        df_with_anomaly = df.loc[df['anomaly'] == -1, ['Total']]
 
-        return hosts_to_block
+        if df_with_anomaly.index[-1] == timestamp:
+            if df.iloc[-1]['Total'] > df.iloc[-2]['Total']:
+                return True
+        else:
+            return False
 
 
-# ===== do testów =====
-def get_mocked_stats_db() -> dict:
-    return {
-        "16.32.312.13": 12900,
-        "28.213.123.2": 30000,
-        "32.132.123.23": 13000,
-    }
+# =========== TESTY ============
+# def get_mocked_stats_db() -> dict:
+#     return {
+#         "16.32.312.13": 12900,
+#         "28.213.123.2": 30000,
+#         "32.132.123.23": 13000,
+#     }
 
-def parser(s):
-    return datetime.strptime(s, '%Y-%m-%d')
+# def parser(s):
+#     return datetime.strptime(s, '%Y-%m-%d')
 
-def get_mocked_persistent_stats_for_period() -> pd.DataFrame:
-    catfish_sales = pd.read_csv('catfish.csv', parse_dates=[0], index_col=0, date_parser=parser)
-    catfish_sales = catfish_sales.asfreq(pd.infer_freq(catfish_sales.index))
-    return catfish_sales
+# def get_mocked_persistent_stats_for_period() -> pd.DataFrame:
+#     catfish_sales = pd.read_csv('catfish.csv', parse_dates=[0], index_col=0, date_parser=parser)
+#     catfish_sales = catfish_sales.asfreq(pd.infer_freq(catfish_sales.index))
+#     return catfish_sales
             
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    # TODO: jako idx przekazujemy timestamp dla tego okna czasowego, w którym badamy anomalie
-    timestamp = pd.ts = pd.Timestamp(year = 2013,  month = 1, day = 1,
-           hour = 0, second = 0, tz = 'US/Central')
+#     # TODO: jako idx przekazujemy timestamp dla tego okna czasowego, w którym badamy anomalie
+#     timestamp = pd.ts = pd.Timestamp(year = 2013,  month = 1, day = 1,
+#            hour = 0, second = 0, tz = 'US/Central')
 
-    # TODO: przekazujemy słownik słownik hostów i odebranych pakietów dla nich
-    stats_db = get_mocked_stats_db()
+#     # TODO: przekazujemy słownik słownik hostów i odebranych pakietów dla nich
+#     stats_db = get_mocked_stats_db()
 
-    anomaly_detector = AnomalyDetector()
-    anomaly_detector.stats_for_period = get_mocked_persistent_stats_for_period()
-    anomaly_detector.outliers_fraction = float(0.02)
+#     anomaly_detector = AnomalyDetector()
+#     anomaly_detector.stats_for_period = get_mocked_persistent_stats_for_period()
+#     anomaly_detector.outliers_fraction = float(0.02)
 
 
-    hosts_to_block = anomaly_detector.detect_anomalies(timestamp, stats_db)
-    for host in hosts_to_block:
-        print("Block", host)
+#     hosts_to_block = anomaly_detector.detect_anomalies(timestamp, stats_db)
+#     for host in hosts_to_block:
+#         print("Block", host)
