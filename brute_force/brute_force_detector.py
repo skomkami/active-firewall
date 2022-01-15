@@ -5,15 +5,9 @@ from config.config import DBConnectionConf, BruteForceModuleConf
 from brute_force.detectors.login_detector import LoginDetector
 from database.bruteforce_repo import BruteForceRepo
 from database.detections_repo import DetectionRepo
-from config.config import ServiceConfig
 from brute_force.detectors.ssh_login_detector import SSHLoginDetector
 from brute_force.detectors.apache2_login_detector import Apache2LoginDetector
 from brute_force.detectors.imap_pop3_login_detector import ImapPop3LoginDetector
-
-
-def log(txt: str):
-    with open('brute_force/logs.txt', 'a') as f:
-        print(txt, file=f)
 
 
 class BruteForceDetector:

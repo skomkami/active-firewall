@@ -53,4 +53,3 @@ class BruteForceRunningStats(RunningStatsAccumulator):
                 id=None,
                 time_window=time_window
             )
-        
