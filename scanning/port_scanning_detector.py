@@ -132,7 +132,6 @@ class PortScanningDetector(AbstractAnalysePackets):
             elif "SYN" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
                 tmp = p_reverse_direction + "_" + str(packet.ack_no)
                 self.synackdb[tmp] = p_direction + "_SYN_ACK_" + str(packet.seq_no) + "_" + str(packet.ack_no)
-                del self.halfscandb[tmp]
             elif "RST" in packet.flags and len(packet.flags) == 1:
                 tmp = p_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.synackdb:
