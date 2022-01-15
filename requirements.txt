@@ -11,7 +11,5 @@ prompt-toolkit==3.0.23
 psycopg2-binary==2.9.2
 ptyprocess==0.7.0
 Pygments==2.10.0
-scapy==2.4.5
-traitlets==5.1.1
 wcwidth==0.2.5
 requests==2.27.1
