@@ -5,7 +5,6 @@ from datetime import datetime
 from functools import reduce
 
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-import anomaly_detection
 from anomaly_detection.detect import AnomalyDetector
 from config.config import DBConnectionConf, PortScannerModuleConf, AnomalyDetectorConf, Periodicity
 from database.blocked_hosts_repo import BlockedHostRepo
@@ -96,11 +95,6 @@ class PortScanningDetector(AbstractAnalysePackets):
             up_to_now_stats.insert(0, mean)
             self.stats_repo.add_many(up_to_now_stats)
 
-        # increment stats
-        packet_stats = PortScanningStats(scan_tries=1)
-        self.stats.plus(scan_from_ip, packet_stats)
-
-        ip_current_stats = self.stats[scan_from_ip].scan_tries
 
         self.anomaly_detector.update_counter()
         anomaly_detector_valid = self.anomaly_detector.check_validity()
