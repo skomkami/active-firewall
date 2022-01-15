@@ -3,10 +3,11 @@ from typing import List
 
 from config.config import DBConnectionConf, BruteForceModuleConf
 from brute_force.detectors.login_detector import LoginDetector
-from brute_force.detectors.ssh_login_detector import SSHLoginDetector
-from brute_force.detectors.apache2_login_detector import Apache2LoginDetector
 from database.detections_repo import DetectionRepo
 from config.config import ServiceConfig
+from brute_force.detectors.ssh_login_detector import SSHLoginDetector
+from brute_force.detectors.apache2_login_detector import Apache2LoginDetector
+from brute_force.detectors.imap_pop3_login_detector import ImapPop3LoginDetector
 
 
 class BruteForceDetector:
@@ -33,7 +34,6 @@ class BruteForceDetector:
             if not detector:
                 continue
             detectors.append(detector)
-
         return detectors
 
     def __get_single_detector(self, name: str, config: ServiceConfig) -> LoginDetector:
@@ -42,6 +42,8 @@ class BruteForceDetector:
             detector = SSHLoginDetector(config, self.repo)
         elif name == 'apache2':
             detector = Apache2LoginDetector(config, self.repo)
+        elif name == 'imappop3':
+            detector = ImapPop3LoginDetector(config, self.repo)
         else:
             detector = None
 
