@@ -33,18 +33,14 @@ class AnomalyDetector():
         timestamps = []
         values = []
         for e in entities:
-            dt = e.time_window.end
-            timestamp = pd.Timestamp(year=dt.date.year, month=dt.date.month, day=dt.date.day, hour=dt.time.hour, minute=dt.time.minute, second=dt.time.second)
-            timestamps.append(timestamp)
+            timestamps.append(e.time_window.end)
             values.append(e.mean_scans_per_addr)
         self.time_series = pd.DataFrame(values, index = timestamps, columns =['Total'])
 
     def detect_anomalies(self, now: datetime, stats: int) -> bool:
 
         df = self.time_series.copy()
-
-        timestamp = pd.Timestamp(year=now.date.year, month=now.date.month, day=now.date.day, hour=now.time.hour, minute=now.time.minute, second=now.time.second)
-        df = df.append(pd.DataFrame({'Total': stats}, index=[timestamp]))
+        df = df.append(pd.DataFrame({'Total': stats}, index=[now]))
 
         # scale values
         scaler = StandardScaler()
@@ -59,7 +55,7 @@ class AnomalyDetector():
         df['anomaly'] = model.predict(data)
         df_with_anomaly = df.loc[df['anomaly'] == -1, ['Total']]
 
-        if df_with_anomaly.index[-1] == timestamp:
+        if df_with_anomaly.index[-1] == now:
             if df.iloc[-1]['Total'] > df.iloc[-2]['Total']:
                 return True
         else:
