@@ -104,7 +104,7 @@ class PortScanningDetector(AbstractAnalysePackets):
         try:
             p_direction = packet.from_ip + "->" + packet.to_ip
             p_reverse_direction = packet.to_ip + "->" + packet.from_ip
-            if "SYN" in packet.flags and packet.seq_no > 0 and packet.ack_no == 0 and len(packet.flags) == 1:
+            if "SYN" in packet.flags and packet.ack_no == 0 and len(packet.flags) == 1:
                 self.halfscandb[p_direction + "_" + str(packet.seq_no)] = p_direction + "_SYN_ACK_" + str(
                     packet.seq_no) + "_" + str(packet.ack_no)
             elif "RST" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
