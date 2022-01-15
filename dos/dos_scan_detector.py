@@ -86,10 +86,11 @@ class DosAttackDetector(AbstractAnalysePackets):
 
     def process_packet(self, packet: Packet):
         try:
-            valid = self.stats.check_validity()
+            now = datetime.now()
+            valid = self.stats.check_validity(now)
             if not valid:
                 mean = self.stats.calc_mean()
-                empty_windows = self.stats.forward(datetime.now())
+                empty_windows = self.stats.forward(now)
                 up_to_now_stats = list(
                     map(
                         lambda tw: DosPersistentStats(id=None, time_window=tw),

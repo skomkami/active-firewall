@@ -86,10 +86,11 @@ class PortScanningDetector(AbstractAnalysePackets):
         return "Port Scanning"
 
     def on_scan_detected(self, scan_from_ip: str):
-        stats_valid = self.stats.check_validity()
-        if not stats_valid:
+        now = datetime.now()
+        valid = self.stats.check_validity(now)
+        if not valid:
             mean = self.stats.calc_mean()
-            empty_windows = self.stats.forward(datetime.now())
+            empty_windows = self.stats.forward(now)
             up_to_now_stats = list(
                 map(
                     lambda tw: PortScanningPersistentStats(id=None, time_window=tw),
@@ -113,7 +114,7 @@ class PortScanningDetector(AbstractAnalysePackets):
             self.anomaly_detector.update_time_series(time_series_training_data)
 
         # detect anomaly - TODO: zmienić, przekazywać liczbę zliczonych wystąpień dla tego hosta
-        nr_of_packets = 0 
+        nr_of_packets = 0
         anomaly = self.anomaly_detector(datetime.now(), nr_of_packets)
         if anomaly:
             pass
