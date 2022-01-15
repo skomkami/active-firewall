@@ -130,6 +130,9 @@ class LoginDetector(ABC):
             return ''
         return latest_log[0].detection_time.strftime(self.timestamp_format)
 
+    def get_previous_log_timestamp(self, log: str) -> str:
+        return self.get_log_timestamp(log).strftime(self.timestamp_format)
+
     @staticmethod
     def run_terminal_command(command: str) -> str:
         pipe = Popen(command, shell=True, stdout=PIPE, stderr=PIPE, encoding="utf-8")
@@ -157,10 +160,6 @@ class LoginDetector(ABC):
     @staticmethod
     @abstractmethod
     def get_log_timestamp(log: str) -> datetime:
-        pass
-
-    @abstractmethod
-    def get_previous_log_timestamp(self, log: str) -> str:
         pass
 
     @staticmethod

@@ -28,9 +28,6 @@ class SSHLoginDetector(LoginDetector):
 
         return datetime.strptime(f'{year} {raw_timestamp}', '%Y %b %d %H:%M:%S')
 
-    def get_previous_log_timestamp(self, log: str) -> str:
-        return self.get_log_timestamp(log).strftime(self.timestamp_format)
-
     @staticmethod
     def get_ip(log: str) -> str:
         [ip] = findall(r'[0-9]+(?:\.[0-9]+){3}', log)
