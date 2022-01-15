@@ -39,9 +39,8 @@ class RunningStatsAccumulator(ABC):
     def plus(self, address: str, other: ModuleStats):
         self.stats_db.setdefault(address, self.empty_stats()).plus(other)
 
-    def check_validity(self) -> bool:
-        now = datetime.now()
-        if now > self.until():
+    def check_validity(self, time: datetime) -> bool:
+        if time > self.until():
             return False
         return True
 
