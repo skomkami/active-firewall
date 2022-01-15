@@ -11,6 +11,11 @@ from brute_force.detectors.apache2_login_detector import Apache2LoginDetector
 from brute_force.detectors.imap_pop3_login_detector import ImapPop3LoginDetector
 
 
+def log(txt: str):
+    with open('brute_force/logs.txt', 'a') as f:
+        print(txt, file=f)
+
+
 class BruteForceDetector:
 
     def __init__(self, db_config: DBConnectionConf, config: BruteForceModuleConf):
@@ -22,33 +27,35 @@ class BruteForceDetector:
         self.delay = 1/self.config.frequency
         self.detectors = self.__get_detectors()
 
-    def init_repo(self):
-        self.stats_repo = BruteForceRepo(self.db_config)
-
     def run(self):
         self.repo = DetectionRepo(self.db_config)
+        self.stats_repo = BruteForceRepo(self.db_config)
         while True:
             for detector in self.detectors:
-                detector.run(self.repo)
+                detector.run(self.repo, self.stats_repo)
             sleep(self.delay)
 
     def __get_detectors(self) -> List[LoginDetector]:
         detectors = list()
-        services = self.config.services
-        for name, config in services:
-            detector = self.__get_single_detector(name, config)
+        services = self.config.services.available_services
+        for service_name in services:
+            detector = self.__get_single_detector(service_name)
             if not detector:
                 continue
             detectors.append(detector)
+
         return detectors
 
-    def __get_single_detector(self, name: str, config: ServiceConfig) -> LoginDetector:
+    def __get_single_detector(self, name: str) -> LoginDetector:
         name = name.lower()
         if name == 'ssh':
+            config = self.config.services.ssh
             detector = SSHLoginDetector(config, self.repo, self.stats_repo, self.periodicity)
         elif name == 'apache2':
+            config = self.config.services.apache2
             detector = Apache2LoginDetector(config, self.repo, self.stats_repo, self.periodicity)
         elif name == 'imappop3':
+            config = self.config.services.imappop3
             detector = ImapPop3LoginDetector(config, self.repo, self.stats_repo, self.periodicity)
         else:
             detector = None

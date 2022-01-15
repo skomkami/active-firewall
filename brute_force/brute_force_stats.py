@@ -10,13 +10,15 @@ from model.timewindow import TimeWindow
 from model.persistent_stats import BruteForcePersistentStats
 from config.config import ServiceConfig
 
+def logg(txt: str):
+    with open('brute_force/logs.txt', 'a') as f:
+        print(txt, file=f)
 
 @dataclass
 class BruteForceStats(ModuleStats):
     login_attempts: int = 0
 
     def plus(self, other: BruteForceStats) -> BruteForceStats:
-        self.login_attempts += 1
         self.login_attempts += other.login_attempts
         return self
     
@@ -31,7 +33,6 @@ class BruteForceRunningStats(RunningStatsAccumulator):
         new_acc = BruteForceRunningStats(since=date, stats_db={}, periodicity=periodicity)
         return new_acc
 
-    # returns false when rules are not exceeded and true when exceeded (dos detected)
     def check_rules(self, address: str, config: ServiceConfig) -> bool:
         stats_for_address = self.stats_db[address]
         return stats_for_address.login_attempts > config.attemptLimit

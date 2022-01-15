@@ -51,4 +51,6 @@ class RunningStatsAccumulator(ABC):
             new_window = TimeWindow(self.since, self.until())
             empty_windows.append(new_window)
             self.since += timedelta(seconds=self.periodicity.seconds())
+        self.reset(self.since)
+
         return empty_windows
