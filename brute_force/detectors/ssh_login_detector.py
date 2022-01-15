@@ -9,7 +9,9 @@ from config.config import ServiceConfig, Periodicity
 
 
 class SSHLoginDetector(LoginDetector):
-
+    """
+    Login detector preapred in order to detect login attempts to SSH server.
+    """
     def __init__(
             self,
             config: ServiceConfig,
@@ -27,9 +29,6 @@ class SSHLoginDetector(LoginDetector):
         year = datetime.now().year
 
         return datetime.strptime(f'{year} {raw_timestamp}', '%Y %b %d %H:%M:%S')
-
-    def get_previous_log_timestamp(self, log: str) -> str:
-        return self.get_log_timestamp(log).strftime(self.timestamp_format)
 
     @staticmethod
     def get_ip(log: str) -> str:
