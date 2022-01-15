@@ -7,6 +7,8 @@ from functools import reduce
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
 from anomaly_detection.detect import AnomalyDetector
 from config.config import DBConnectionConf, DoSModuleConf, Periodicity, AnomalyDetectorConf
+from database.blocked_hosts_repo import BlockedHostRepo
+from database.detections_repo import DetectionRepo
 from database.dos_repo import DosRepo
 from ip_access_manager.manager import IPAccessManager
 from model.blocked_host import BlockedHost
@@ -67,6 +69,8 @@ class DosAttackDetector(AbstractAnalysePackets):
     def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf, anomaly_config: AnomalyDetectorConf):
         super().__init__(db_config)
         self.stats_repo = None
+        self.detections_repo = None
+        self.blocks_repo = None
         self.config = dos_module_conf
         self.stats = DosRunningStats.init(datetime.now(), dos_module_conf.periodicity)
         self.anomaly_detector = AnomalyDetector(anomaly_config)
@@ -74,6 +78,8 @@ class DosAttackDetector(AbstractAnalysePackets):
 
     def init(self):
         self.stats_repo = DosRepo(self.db_config)
+        self.blocks_repo = BlockedHostRepo(self.db_config)
+        self.detections_repo = DetectionRepo(self.db_config)
 
     def module_name(self):
         return "Dos attack"
