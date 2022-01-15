@@ -9,7 +9,9 @@ from config.config import ServiceConfig, Periodicity
 
 
 class Apache2LoginDetector(LoginDetector):
-
+    """
+    Login detector preapred in order to detect login attempts to Apache2 HTTP server.
+    """
     def __init__(
             self,
             config: ServiceConfig,
@@ -27,9 +29,6 @@ class Apache2LoginDetector(LoginDetector):
         raw_timestamp = findall(r'\d+/\w+/\d+:\d+:\d+:\d+', log)[0]
 
         return datetime.strptime(raw_timestamp, '%d/%b/%Y:%H:%M:%S')
-
-    def get_previous_log_timestamp(self, log: str) -> str:
-        return self.get_log_timestamp(log).strftime(self.timestamp_format)
 
     @staticmethod
     def get_ip(log: str) -> str:

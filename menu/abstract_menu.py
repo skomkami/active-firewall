@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 
 
 class AbstractMenu(ABC):
+    """
+    Base class for all menus. Its only purpose is to provide interface for menus, so more generic code can be written.
+    """
+
 
     @abstractmethod
     def menu_options(self):

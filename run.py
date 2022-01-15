@@ -12,6 +12,10 @@ from utils.log import log_to_file
 
 
 def runProcesses(config: AppConfig) -> List[Process]:
+    """
+    This method is responsible for launching submodules in subprocesses.
+    Only modules specified in config file will be launched.
+    """
     portScanningDetectionProc = None
     dosModuleProc = None
     bruteForceProc = None
@@ -34,13 +38,16 @@ def runProcesses(config: AppConfig) -> List[Process]:
 
 def terminate_processes(processes: list) -> list:
     for process in processes:
-        if process != None:
+        if process is not None:
             process.terminate()
 
     return processes
 
 
 def main(stdscr):
+    """
+    This method is responsible for displaying menus and managing processes.
+    """
     config = readConf(getArgs()['config_file'] or 'config.json')
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
@@ -85,7 +92,7 @@ def main(stdscr):
                 else:
                     menus_path.append(current_menu)
                     current_menu = newMenu
-                    #reset row
+                    # reset row
                     current_row = 0
             else:
                 current_menu.handle_custom_action(key, current_row, current_page)

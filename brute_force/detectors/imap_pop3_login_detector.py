@@ -9,7 +9,9 @@ from config.config import ServiceConfig, Periodicity
 
 
 class ImapPop3LoginDetector(LoginDetector):
-
+    """
+    Login detector preapred in order to detect login attempts to IMAP/POP3 server.
+    """
     def __init__(
             self,
             config: ServiceConfig,
@@ -27,9 +29,6 @@ class ImapPop3LoginDetector(LoginDetector):
         year = datetime.now().year
 
         return datetime.strptime(f'{year} {raw_timestamp}', '%Y %b %d %H:%M:%S')
-
-    def get_previous_log_timestamp(self, log: str) -> str:
-        return self.get_log_timestamp(log).strftime(self.timestamp_format)
 
     @staticmethod
     def get_ip(log: str) -> str:

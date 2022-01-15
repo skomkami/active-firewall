@@ -4,12 +4,17 @@ from menu.abstract_menu import AbstractMenu
 import curses
 
 
-class TraficMenu(AbstractMenu):
+class TrafficMenu(AbstractMenu):
+    """
+    Menu where all detected suspicious traffic can be listed. Compared to BlockedHostsMenu, it can show history
+    for hosts.
+    """
+
     def __init__(self, stdscr, db_config: DBConnectionConf):
         super().__init__(stdscr)
         self.stdscr = stdscr
-        self.dbConfig = db_config
-        self.detections_repo = DetectionRepo(self.dbConfig)
+        self.db_config = db_config
+        self.detections_repo = DetectionRepo(self.db_config)
         self.current_page = 1
 
     def menu_options(self):

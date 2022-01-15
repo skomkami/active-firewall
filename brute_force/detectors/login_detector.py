@@ -38,7 +38,16 @@ class IPInfo:
 
 
 class LoginDetector(ABC):
-
+    """
+    Abstract class to be inherited by child classes. It is a class designed to detect failed authentication attempts
+    (or any other provided pattern) in log file. After running 'run' method it:
+        1. calls proper command in terminal,
+        2. divides stdout on separate logs,
+        3. counts time stamp of most recent log,
+        4. divides each log to proper fields (source IP, attacked port, timestamp),
+        5. inserts information about detections to 'detections' table in database,
+        6. inserts information about whole brute force module history to 'brute_force_module_stats' table in database.
+    """
     def __init__(
             self,
             name: ModuleName,
@@ -101,7 +110,7 @@ class LoginDetector(ABC):
             # If attempts number per addres reached limit then ip should be blocked.
             if self.parsed_logs[ip].attempts_number >= self.attempt_limit:
                 self.parsed_logs[ip].suspicious_address = True
-                # self.ip_manager.block_access_from_ip(ip)
+                self.ip_manager.block_access_from_ip(ip)
 
     def add_to_detections_table(self, timestamp: datetime, source_ip: str, attempt_number: int, port: str):
         detection = Detection(
@@ -130,6 +139,9 @@ class LoginDetector(ABC):
             return ''
         return latest_log[0].detection_time.strftime(self.timestamp_format)
 
+    def get_previous_log_timestamp(self, log: str) -> str:
+        return self.get_log_timestamp(log).strftime(self.timestamp_format)
+
     @staticmethod
     def run_terminal_command(command: str) -> str:
         pipe = Popen(command, shell=True, stdout=PIPE, stderr=PIPE, encoding="utf-8")
@@ -157,10 +169,6 @@ class LoginDetector(ABC):
     @staticmethod
     @abstractmethod
     def get_log_timestamp(log: str) -> datetime:
-        pass
-
-    @abstractmethod
-    def get_previous_log_timestamp(self, log: str) -> str:
         pass
 
     @staticmethod

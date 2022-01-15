@@ -11,7 +11,12 @@ from brute_force.detectors.imap_pop3_login_detector import ImapPop3LoginDetector
 
 
 class BruteForceDetector:
+    """
+    Main facade for BruteFroce module. Holds all paramaters and instances required for running brute force attack
+    detectors. Currently it creates certain detectors for each service base on config provided.
 
+    Main method is 'run'. It runs in infinite loop, in which it runs 'run' method for each of detectors.
+    """
     def __init__(self, db_config: DBConnectionConf, config: BruteForceModuleConf):
         self.db_config = db_config
         self.repo = DetectionRepo(self.db_config)
