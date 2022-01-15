@@ -36,20 +36,11 @@ class Services:
     ssh = ServiceConfig()
     apache2 = ServiceConfig()
     imappop3 = ServiceConfig()
-    available_services = {
-        'ssh': ssh,
-        'apache2': apache2,
-        'imappop3': imappop3
-    }
-
-    def __iter__(self):
-        for name, service in self.available_services.items():
-            yield name, service
+    available_services = ('ssh', 'apache2', 'imappop3')
 
 
 class DBConnectionConf:
     host = 'localhost'
-    host_ip = '127.0.0.1'
     user = 'postgres'
     dbname = 'active_firewall'
     password = 'postgres'
@@ -98,9 +89,9 @@ def readConf(path='config.json') -> AppConfig:
             "periodicity": {"py/object": "config.config.Periodicity"},
             "services": {
                 "py/object": "config.config.Services",
-                "ssh": {"py/object": "config.config.Service"},
-                "apache2": {"py/object": "config.config.Service"},
-                "imappop3": {"py/object": "config.config.Service"}
+                "ssh": {"py/object": "config.config.ServiceConfig"},
+                "apache2": {"py/object": "config.config.ServiceConfig"},
+                "imappop3": {"py/object": "config.config.ServiceConfig"}
             }
         },
         "portScannerConf": {

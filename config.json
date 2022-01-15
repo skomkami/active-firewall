@@ -23,6 +23,10 @@
       "apache2": {
         "enabled": true,
         "attemptLimit": 50
+      },
+      "imappop3": {
+        "enabled": true,
+        "attemptLimit": 50
       }
     }
   },
