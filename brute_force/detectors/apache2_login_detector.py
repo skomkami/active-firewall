@@ -9,7 +9,9 @@ from config.config import ServiceConfig, Periodicity
 
 
 class Apache2LoginDetector(LoginDetector):
-
+    """
+    Login detector preapred in order to detect login attempts to Apache2 HTTP server.
+    """
     def __init__(
             self,
             config: ServiceConfig,

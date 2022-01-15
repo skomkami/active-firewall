@@ -9,7 +9,9 @@ from config.config import ServiceConfig, Periodicity
 
 
 class SSHLoginDetector(LoginDetector):
-
+    """
+    Login detector preapred in order to detect login attempts to SSH server.
+    """
     def __init__(
             self,
             config: ServiceConfig,

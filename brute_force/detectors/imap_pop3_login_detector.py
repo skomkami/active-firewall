@@ -9,7 +9,9 @@ from config.config import ServiceConfig, Periodicity
 
 
 class ImapPop3LoginDetector(LoginDetector):
-
+    """
+    Login detector preapred in order to detect login attempts to IMAP/POP3 server.
+    """
     def __init__(
             self,
             config: ServiceConfig,
