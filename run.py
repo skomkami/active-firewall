@@ -14,20 +14,20 @@ def runProcesses(config: AppConfig) -> List[Process]:
     portScanningDetectionProc = None
     dosModuleProc = None
     bruteForceProc = None
-    # if config.portScannerConf.enabled:
-    #     psConfig = config.portScannerConf
-    #     lanIp = psConfig.lanIp
-    #     detector = PortScanningDetector(config.dbConnectionConf, psConfig, lanIp)
-    #     portScanningDetectionProc = Process(target=detector.run, args=())
-    #     portScanningDetectionProc.start()
+    if config.portScannerConf.enabled:
+        psConfig = config.portScannerConf
+        lanIp = psConfig.lanIp
+        detector = PortScanningDetector(config.dbConnectionConf, psConfig, lanIp)
+        portScanningDetectionProc = Process(target=detector.run, args=())
+        portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:
         detector = BruteForceDetector(config.dbConnectionConf, config.bfModuleConf)
         bruteForceProc = Process(target=detector.run, args=())
         bruteForceProc.start()
-    # if config.dosModuleConf.enabled:
-    #     detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf)
-    #     dosModuleProc = Process(target=detector.run, args=())
-    #     dosModuleProc.start()
+    if config.dosModuleConf.enabled:
+        detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf)
+        dosModuleProc = Process(target=detector.run, args=())
+        dosModuleProc.start()
 
     return [portScanningDetectionProc, dosModuleProc, bruteForceProc]
 
