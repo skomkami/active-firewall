@@ -8,8 +8,11 @@ from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
 from anomaly_detection.detect import AnomalyDetector
 from config.config import DBConnectionConf, PortScannerModuleConf, AnomalyDetectorConf, Periodicity
 from database.blocked_hosts_repo import BlockedHostRepo
+from database.detections_repo import DetectionRepo
 from database.port_scanning_repo import PortScanningRepo
 from ip_access_manager.manager import IPAccessManager
+from model.blocked_host import BlockedHost
+from model.detection import Detection, ModuleName
 from model.packet import Packet
 from model.persistent_stats import PortScanningPersistentStats
 from model.running_stats import ModuleStats, RunningStatsAccumulator
@@ -67,6 +70,7 @@ class PortScanningDetector(AbstractAnalysePackets):
         self.halfscandb = {}
         self.synackdb = {}
         self.stats_repo = None
+        self.detections_repo = None
         self.stats = PortScanningRunningStats.init(datetime.now(), port_scanning_module_conf.periodicity)
         self.ip_manager = IPAccessManager()
         self.anomaly_detector = AnomalyDetector(anomaly_config)
@@ -75,11 +79,12 @@ class PortScanningDetector(AbstractAnalysePackets):
     def init(self):
         self.stats_repo = PortScanningRepo(self.db_config)
         self.blocks_repo = BlockedHostRepo(self.db_config)
+        self.detections_repo = DetectionRepo(self.db_config)
 
     def module_name(self):
         return "Port Scanning"
 
-    def on_scan_detected(self, scan_from_ip: str):
+    def on_scan_detected(self, scan_from_ip: str, scanned_port):
         now = datetime.now()
         valid = self.stats.check_validity(now)
         if not valid:
@@ -95,6 +100,9 @@ class PortScanningDetector(AbstractAnalysePackets):
             up_to_now_stats.insert(0, mean)
             self.stats_repo.add_many(up_to_now_stats)
 
+        packet_stats = PortScanningStats(scan_tries=1)
+        self.stats.plus(scan_from_ip, packet_stats)
+
         self.anomaly_detector.update_counter()
         anomaly_detector_valid = self.anomaly_detector.check_validity()
         if not anomaly_detector_valid:
@@ -107,12 +115,14 @@ class PortScanningDetector(AbstractAnalysePackets):
             # update time series in anomaly detector object
             self.anomaly_detector.update_time_series(time_series_training_data)
 
-        # detect anomaly - TODO: zmienić, przekazywać liczbę zliczonych wystąpień dla tego hosta
-        nr_of_packets = 0
-        anomaly = self.anomaly_detector(datetime.now(), nr_of_packets)
+        nr_of_packets = self.stats.stats_db[scan_from_ip].scan_tries
+        anomaly = self.anomaly_detector.detect_anomalies(datetime.now(), nr_of_packets)
         if anomaly:
-            pass
-
+            detection = Detection(now, scan_from_ip, ModuleName.PORTSCANNING_MODULE, "Scanned port {}".format(scanned_port))
+            self.detections_repo.add(detection)
+            block_host = BlockedHost(scan_from_ip, now)
+            self.blocks_repo.add(block_host)
+            self.ip_manager.block_access_from_ip(scan_from_ip)
 
     def process_packet(self, packet: Packet):
         try:
@@ -125,7 +135,7 @@ class PortScanningDetector(AbstractAnalysePackets):
                 tmp = p_reverse_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.halfscandb:
                     del self.halfscandb[tmp]
-                    self.on_scan_detected(packet.to_ip)
+                    self.on_scan_detected(packet.to_ip, packet.to_port)
             elif "SYN" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
                 tmp = p_reverse_direction + "_" + str(packet.ack_no)
                 self.synackdb[tmp] = p_direction + "_SYN_ACK_" + str(packet.seq_no) + "_" + str(packet.ack_no)
@@ -133,7 +143,7 @@ class PortScanningDetector(AbstractAnalysePackets):
                 tmp = p_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.synackdb:
                     del self.synackdb[tmp]
-                    self.on_scan_detected(packet.from_ip)
+                    self.on_scan_detected(packet.from_ip, packet.from_port)
             elif "ACK" in packet.flags and len(packet.flags) == 1:
                 tmp = p_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.synackdb:
