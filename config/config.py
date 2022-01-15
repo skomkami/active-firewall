@@ -35,9 +35,11 @@ class ServiceConfig:
 class Services:
     ssh = ServiceConfig()
     apache2 = ServiceConfig()
+    imappop3 = ServiceConfig()
     available_services = {
         'ssh': ssh,
-        'apache2': apache2
+        'apache2': apache2,
+        'imappop3': imappop3
     }
 
     def __iter__(self):
@@ -96,7 +98,8 @@ def readConf(path='config.json') -> AppConfig:
             "services": {
                 "py/object": "config.config.Services",
                 "ssh": {"py/object": "config.config.Service"},
-                "apache2": {"py/object": "config.config.Service"}
+                "apache2": {"py/object": "config.config.Service"},
+                "imappop3": {"py/object": "config.config.Service"}
             }
         },
         "portScannerConf": {
