@@ -10,14 +10,13 @@ from abc import abstractmethod
 class Repo:
     def __init__(self, dbConnectionConf: DBConnectionConf) -> None:
         self.conn = None
-        self.config = dbConnectionConf
         try:
             self.conn = psycopg2.connect(
-                dbname=self.config.dbname,
-                user=self.config.user,
-                password=self.config.password,
-                host=self.config.host,
-                port=self.config.port
+                dbname=dbConnectionConf.dbname,
+                user=dbConnectionConf.user,
+                password=dbConnectionConf.password,
+                host=dbConnectionConf.host,
+                port=dbConnectionConf.port
             )
         except (Exception, psycopg2.DatabaseError) as error:
             log_to_file(str(error))
@@ -31,8 +30,6 @@ class Repo:
         raise NotImplementedError
 
     def add(self, entity):
-        if entity.attacker_ip_address in (self.config.host, self.config.host_ip):
-            return
         command = self.build_insert_query(entity)
         cur = self.conn.cursor()
         cur.execute(command)
