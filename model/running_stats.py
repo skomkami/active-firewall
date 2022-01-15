@@ -41,7 +41,6 @@ class RunningStatsAccumulator(ABC):
 
     def check_validity(self) -> bool:
         now = datetime.now()
-        # debug("now: " + str(now) + ', valid to: ' + str(counter_valid_to))
         if now > self.until():
             return False
         return True
