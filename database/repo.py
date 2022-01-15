@@ -1,23 +1,26 @@
-from logging import logThreads
+from abc import abstractmethod
 from typing import Tuple, List
 
 import psycopg2
 
 from config.config import DBConnectionConf
 from utils.log import log_to_file
-from abc import abstractmethod
-import sys
+
 
 class Repo:
-    def __init__(self, dbConnectionConf: DBConnectionConf) -> None:
+    """
+    Base class for all repositories. Its purpose is to reduce boilerplate code.
+    """
+    
+    def __init__(self, db_connection_conf: DBConnectionConf) -> None:
         self.conn = None
         try:
             self.conn = psycopg2.connect(
-                dbname=dbConnectionConf.dbname,
-                user=dbConnectionConf.user,
-                password=dbConnectionConf.password,
-                host=dbConnectionConf.host,
-                port=dbConnectionConf.port
+                dbname=db_connection_conf.dbname,
+                user=db_connection_conf.user,
+                password=db_connection_conf.password,
+                host=db_connection_conf.host,
+                port=db_connection_conf.port
             )
         except (Exception, psycopg2.DatabaseError) as error:
             log_to_file(str(error))

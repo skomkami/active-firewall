@@ -11,11 +11,16 @@ from utils.log import log_to_file
 
 
 class AbstractAnalysePackets(ABC):
+    """
+    Base class for modules operating on raw packets. This abstract class is responsible for listening for incoming
+    packets. Those packets are then passed to `process_packet` function which should be implemented by subclasses.
+    """
+
     def __init__(self, db_config: DBConnectionConf):
+        self.repo = None
         try:
             self.socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
         except socket.error as msg:
-            # TODO lepsza obsługa błędów
             log_to_file('[*]Socket can\'t be created! Error Code : ' + str(msg[0]) + ' Error Message ' + msg[1])
             sys.exit()
         except AttributeError:
@@ -75,7 +80,6 @@ class AbstractAnalysePackets(ABC):
 
                 # version and IHL (header length) are on one byte
                 version_and_ihl = ip_header[0]
-                version = version_and_ihl >> 4
                 ihl = version_and_ihl & 0xF
                 total_length = ip_header[2]
                 ipheader_length = ihl * 4
