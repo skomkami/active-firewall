@@ -12,7 +12,7 @@ class AnomalyDetector():
     def __init__(self, anomaly_detector_config: AnomalyDetectorConf):
         self.counter = 0
         self.maxCounter = anomaly_detector_config.maxCounter
-        self.outliers_fraction = anomaly_detector_config.outliers_fraction
+        self.outliers_fraction = anomaly_detector_config.outliersFraction
         self.time_series = None
 
     def update_counter(self):
