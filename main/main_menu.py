@@ -1,11 +1,14 @@
 from blocked_hosts.blocked_hosts_menu import BlockedHostsMenu
 from config.config import DBConnectionConf
 from menu.abstract_menu import AbstractMenu
-from traffic.traffic_menu import TraficMenu
+from traffic.traffic_menu import TrafficMenu
 import curses
 
 
 class MainMenu(AbstractMenu):
+    """
+    Main menu. All available view can be selected from it.
+    """
 
     def menu_options(self):
         return ['Show suspicious traffic', 'Blocked hosts list', 'Exit']
@@ -13,14 +16,14 @@ class MainMenu(AbstractMenu):
     def __init__(self, stdscr, db_config: DBConnectionConf):
         super().__init__(stdscr)
         self.stdscr = stdscr
-        self.dbConfig = db_config
+        self.db_config = db_config
 
     def handle_action(self, selected_row, selected_page):
         row = selected_row % len(self.menu_options())
         if row == 0:
-            return TraficMenu(self.stdscr, self.dbConfig)
+            return TrafficMenu(self.stdscr, self.db_config)
         elif row == 1:
-            return BlockedHostsMenu(self.stdscr, self.dbConfig)
+            return BlockedHostsMenu(self.stdscr, self.db_config)
         else:
             return None
     

@@ -7,7 +7,6 @@ from typing import List
 
 from config.config import Periodicity
 from model.timewindow import TimeWindow
-from utils.log import log_to_file
 
 
 class ModuleStats(ABC):
@@ -17,6 +16,10 @@ class ModuleStats(ABC):
 
 @dataclass
 class RunningStatsAccumulator(ABC):
+    """
+    Base class for storing and determining stats in time windows.
+    """
+
     since: datetime
     # address:str -> ModuleStats TODO typing
     stats_db: dict
@@ -44,7 +47,11 @@ class RunningStatsAccumulator(ABC):
         return True
 
     def forward(self, to_date: datetime) -> List[TimeWindow]:
-        """Adjust window to to_date and return empty TimeWindow-s between."""
+        """
+        Adjust window to to_date and return empty TimeWindow-s between this and last call.
+        Needed because events processing code is run once per event, and no events can occur during one time window.
+        """
+
         empty_windows: List[TimeWindow] = []
         self.since += timedelta(seconds=self.periodicity.seconds())
         while self.until() < to_date:

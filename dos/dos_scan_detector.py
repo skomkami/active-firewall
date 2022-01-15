@@ -38,23 +38,24 @@ class DosRunningStats(RunningStatsAccumulator):
         return new_acc
 
     # returns false when rules are not exceeded and true when exceeded (dos detected)
-    def check_rules(self, address: str, dosModuleConf: DoSModuleConf) -> bool:
-        stats_for_address=self.stats_db[address]
-        if stats_for_address.packets_no >= dosModuleConf.maxPackets or stats_for_address.packets_size >= dosModuleConf.maxDataKB * 1000:
+    def check_rules(self, address: str, dos_module_conf: DoSModuleConf) -> bool:
+        stats_for_address = self.stats_db[address]
+        if stats_for_address.packets_no >= dos_module_conf.maxPackets \
+                or stats_for_address.packets_size >= dos_module_conf.maxDataKB * 1000:
             return True
         else:
             return False
 
     def calc_mean(self) -> DosPersistentStats:
         total = len(self.stats_db)
-        time_window=TimeWindow(start=self.since, end = self.until())
+        time_window = TimeWindow(start=self.since, end=self.until())
         if total > 0:
             stats_sum = reduce(lambda a, b: a.plus(b), self.stats_db.values())
             mean_stats = DosPersistentStats(
                 id=None,
                 time_window=time_window,
-                mean_packets_per_addr=stats_sum.packets_no/total,
-                mean_packets_size_per_addr=stats_sum.packets_size/total
+                mean_packets_per_addr=stats_sum.packets_no / total,
+                mean_packets_size_per_addr=stats_sum.packets_size / total
             )
             return mean_stats
         else:
@@ -65,6 +66,11 @@ class DosRunningStats(RunningStatsAccumulator):
 
 
 class DosAttackDetector(AbstractAnalysePackets):
+    """
+    This detector counts number and size of packets in chosen time windows and then decides whether current host stats
+    are treated as suspicious traffic.
+    """
+
     def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf):
         super().__init__(db_config)
         self.stats_repo = None

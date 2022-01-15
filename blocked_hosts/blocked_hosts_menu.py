@@ -1,25 +1,27 @@
-from config.config import DBConnectionConf
-from database.blocked_hosts_repo import BlockedHostRepo
-from database.detections_repo import DetectionRepo
-import ip_access_manager
-from ip_access_manager.manager import IPAccessManager
-from menu.abstract_menu import AbstractMenu
 import curses
 
+from config.config import DBConnectionConf
+from database.blocked_hosts_repo import BlockedHostRepo
+from ip_access_manager.manager import IPAccessManager
+from menu.abstract_menu import AbstractMenu
 from model.blocked_host import BlockState, BlockedHost
 from utils.log import log_to_file
 
 
 class BlockedHostsMenu(AbstractMenu):
+    """
+    This menu displays list of blocked hosts and allows to unblock them by pressing `u` key when given device is
+    selected in menu.
+    """
+
     def __init__(self, stdscr, db_config: DBConnectionConf):
         super().__init__(stdscr)
         self.stdscr = stdscr
-        self.dbConfig = db_config
-        self.blocked_hosts_repo = BlockedHostRepo(self.dbConfig)
+        self.db_config = db_config
+        self.blocked_hosts_repo = BlockedHostRepo(self.db_config)
         self.current_page = 1
         self.ip_manager = IPAccessManager()
         self.selected_block: BlockedHost = None
-
 
     def menu_options(self):
         return ["Exit"]
@@ -36,7 +38,7 @@ class BlockedHostsMenu(AbstractMenu):
 
     def has_next_page(self):
         return len(self.blocked_hosts_repo.get_all(offset=10 * self.current_page)) >= 10
-    
+
     def has_next_option(self, selected_row):
         return True
 
@@ -84,9 +86,7 @@ class BlockedHostsMenu(AbstractMenu):
                 self.custom_menu_options()
         else:
             no_blocked_str = "No blocked hosts yet"
-            self.stdscr.addstr(height//2, (width -len(no_blocked_str))//2, no_blocked_str)
-
-
+            self.stdscr.addstr(height // 2, (width - len(no_blocked_str)) // 2, no_blocked_str)
 
     def custom_menu_options(self):
         h, w = self.stdscr.getmaxyx()

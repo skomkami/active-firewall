@@ -61,6 +61,11 @@ class PortScanningRunningStats(RunningStatsAccumulator):
 
 
 class PortScanningDetector(AbstractAnalysePackets):
+    """
+    This detector counts number of detected port scans (half open scanning) in chosen time windows and compares current
+    amount with historic data to detect anomalies. High-frequency anomalies are treated as suspicious traffic.
+    """
+
     def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf):
         super().__init__(db_config)
         self.config = port_scanning_module_conf
