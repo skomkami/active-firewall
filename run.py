@@ -21,7 +21,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
     bruteForceProc = None
     if config.portScannerConf.enabled:
         psConfig = config.portScannerConf
-        detector = PortScanningDetector(config.dbConnectionConf, psConfig)
+        detector = PortScanningDetector(config.dbConnectionConf, psConfig, config.anomalyDetectorConf)
         portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:
@@ -29,7 +29,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
         bruteForceProc = Process(target=detector.run, args=())
         bruteForceProc.start()
     if config.dosModuleConf.enabled:
-        detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf)
+        detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf, config.anomalyDetectorConf)
         dosModuleProc = Process(target=detector.run, args=())
         dosModuleProc.start()
 

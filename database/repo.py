@@ -24,8 +24,6 @@ class Repo:
             )
         except (Exception, psycopg2.DatabaseError) as error:
             log_to_file(str(error))
-        # except:
-        #     log_to_file("something bad happended. " + sys.exc_info()[0])
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.conn is not None:
@@ -54,10 +52,10 @@ class Repo:
         raise NotImplementedError
 
     @abstractmethod
-    def build_get_all_query(self, limit=10, offset=0, where_clause='detection_id IS NOT NULL', order='ASC') -> str:
+    def build_get_all_query(self, limit, offset, where_clause, order) -> str:
         raise NotImplementedError
 
-    def get_all(self, limit=10, offset=0, where_clause='detection_id IS NOT NULL', order='ASC'):
+    def get_all(self, limit=10, offset=0, where_clause='id IS NOT NULL', order='ASC'):
         command = self.build_get_all_query(limit, offset, where_clause, order)
         cur = self.conn.cursor()
         cur.execute(command)

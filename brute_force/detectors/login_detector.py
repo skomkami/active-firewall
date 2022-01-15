@@ -122,10 +122,11 @@ class LoginDetector(ABC):
         self.repo.add(detection)
 
     def add_to_brute_force_stats(self, source_ip: str, new_attempts: int):
-        valid = self.stats.check_validity()
+        now = datetime.now()
+        valid = self.stats.check_validity(now)
         if not valid:
             mean = self.stats.calc_mean()
-            empty_windows = self.stats.forward(datetime.now())
+            empty_windows = self.stats.forward(now)
             up_to_now_stats = [BruteForcePersistentStats(id=None, time_window=tw) for tw in empty_windows]
             up_to_now_stats.insert(0, mean)
             self.stats_repo.add_many(up_to_now_stats)

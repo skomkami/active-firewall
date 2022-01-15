@@ -36,13 +36,6 @@ class PortScanningRunningStats(RunningStatsAccumulator):
         new_acc = PortScanningRunningStats(since=date, stats_db={}, periodicity=periodicity)
         return new_acc
 
-    # returns false when rules are not exceeded and true when exceeded (PortScanning detected)
-    def check_rules(self, address: str, PortScanningModuleConf: PortScannerModuleConf) -> bool:
-        # if self.no_counter >= PortScanningModuleConf.maxPackets or self.size_counter >= PortScanningModuleConf.maxDataKB * 1000:
-        #     return True
-        # else:
-        return False
-
     def calc_mean(self) -> PortScanningPersistentStats:
         total = len(self.stats_db)
         if total > 0:
@@ -67,7 +60,8 @@ class PortScanningDetector(AbstractAnalysePackets):
     amount with historic data to detect anomalies. High-frequency anomalies are treated as suspicious traffic.
     """
 
-    def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf):
+    def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf,
+                 anomaly_config: AnomalyDetectorConf):
         super().__init__(db_config)
         self.config = port_scanning_module_conf
         self.halfscandb = {}
@@ -75,7 +69,7 @@ class PortScanningDetector(AbstractAnalysePackets):
         self.stats_repo = None
         self.stats = PortScanningRunningStats.init(datetime.now(), port_scanning_module_conf.periodicity)
         self.ip_manager = IPAccessManager()
-        self.anomaly_detector = AnomalyDetector(AnomalyDetectorConf())
+        self.anomaly_detector = AnomalyDetector(anomaly_config)
         self.blocks_repo = None
 
     def init(self):
@@ -86,10 +80,11 @@ class PortScanningDetector(AbstractAnalysePackets):
         return "Port Scanning"
 
     def on_scan_detected(self, scan_from_ip: str):
-        stats_valid = self.stats.check_validity()
-        if not stats_valid:
+        now = datetime.now()
+        valid = self.stats.check_validity(now)
+        if not valid:
             mean = self.stats.calc_mean()
-            empty_windows = self.stats.forward(datetime.now())
+            empty_windows = self.stats.forward(now)
             up_to_now_stats = list(
                 map(
                     lambda tw: PortScanningPersistentStats(id=None, time_window=tw),
@@ -107,13 +102,13 @@ class PortScanningDetector(AbstractAnalysePackets):
 
             # get last X means from database
             limit = self.anomaly_detector.maxCounter
-            time_series_training_data = self.stats_repo.get_all(self, limit=limit, order='DESC')
+            time_series_training_data = self.stats_repo.get_all(limit=limit, order='DESC')
 
             # update time series in anomaly detector object
             self.anomaly_detector.update_time_series(time_series_training_data)
 
         # detect anomaly - TODO: zmienić, przekazywać liczbę zliczonych wystąpień dla tego hosta
-        nr_of_packets = 0 
+        nr_of_packets = 0
         anomaly = self.anomaly_detector(datetime.now(), nr_of_packets)
         if anomaly:
             pass

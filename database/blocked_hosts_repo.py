@@ -16,9 +16,9 @@ class BlockedHostRepo(Repo):
         )
         return command
 
-    def build_get_all_query(self, limit=10, offset=0, where_clause='block_id IS NOT NULL', order='DESC') -> str:
-        command = "SELECT {},block_id FROM blocked_hosts ORDER BY state_since {} LIMIT {} OFFSET {}".format(
-            self.db_fields, order, limit, offset)
+    def build_get_all_query(self, limit, offset, where_clause, order) -> str:
+        command = "SELECT {},id FROM blocked_hosts WHERE {} ORDER BY state_since {} LIMIT {} OFFSET {}".format(
+            self.db_fields, where_clause, order, limit, offset)
         return command
 
     def entity_from_tuple(self, tuple: Tuple) -> BlockedHost:

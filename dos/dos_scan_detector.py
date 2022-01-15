@@ -5,7 +5,8 @@ from datetime import datetime
 from functools import reduce
 
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-from config.config import DBConnectionConf, DoSModuleConf, Periodicity
+from anomaly_detection.detect import AnomalyDetector
+from config.config import DBConnectionConf, DoSModuleConf, Periodicity, AnomalyDetectorConf
 from database.dos_repo import DosRepo
 from ip_access_manager.manager import IPAccessManager
 from model.detection import Detection, ModuleName
@@ -71,11 +72,12 @@ class DosAttackDetector(AbstractAnalysePackets):
     are treated as suspicious traffic.
     """
 
-    def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf):
+    def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf, anomaly_config: AnomalyDetectorConf):
         super().__init__(db_config)
         self.stats_repo = None
         self.config = dos_module_conf
         self.stats = DosRunningStats.init(datetime.now(), dos_module_conf.periodicity)
+        self.anomaly_detector = AnomalyDetector(anomaly_config)
         self.ip_manager = IPAccessManager()
 
     def init(self):
@@ -86,10 +88,11 @@ class DosAttackDetector(AbstractAnalysePackets):
 
     def process_packet(self, packet: Packet):
         try:
-            valid = self.stats.check_validity()
+            now = datetime.now()
+            valid = self.stats.check_validity(now)
             if not valid:
                 mean = self.stats.calc_mean()
-                empty_windows = self.stats.forward(datetime.now())
+                empty_windows = self.stats.forward(now)
                 up_to_now_stats = list(
                     map(
                         lambda tw: DosPersistentStats(id=None, time_window=tw),
