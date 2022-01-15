@@ -1,6 +1,6 @@
 {
   "dosModuleConf": {
-    "enabled": true,
+    "enabled": false,
     "maxPackets": 5000,
     "maxDataKB": 1000,
     "periodicity": {
@@ -9,7 +9,7 @@
     }
   },
   "bfModuleConf": {
-    "enabled": true,
+    "enabled": false,
     "frequency": 100,
     "periodicity": {
       "unit": "Second",
@@ -17,15 +17,15 @@
     },
     "services": {
       "ssh": {
-        "enabled": true,
+        "enabled": false,
         "attemptLimit": 100
       },
       "apache2": {
-        "enabled": true,
+        "enabled": false,
         "attemptLimit": 50
       },
       "imappop3": {
-        "enabled": true,
+        "enabled": false,
         "attemptLimit": 50
       }
     }

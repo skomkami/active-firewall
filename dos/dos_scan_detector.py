@@ -40,6 +40,9 @@ class DosRunningStats(RunningStatsAccumulator):
     # returns false when rules are not exceeded and true when exceeded (dos detected)
     def check_rules(self, address: str, dosModuleConf: DoSModuleConf) -> bool:
         stats_for_address=self.stats_db[address]
+
+        # TODO: w tym miejscu wywołanie funkcji wyrywającej anomalie
+
         if stats_for_address.packets_no >= dosModuleConf.maxPackets or stats_for_address.packets_size >= dosModuleConf.maxDataKB * 1000:
             return True
         else:

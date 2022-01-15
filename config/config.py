@@ -73,6 +73,11 @@ class AppConfig:
     portScannerConf = PortScannerModuleConf()
 
 
+class AnomalyDetectorConf:
+    maxCounter = 100
+    outliers_fraction = float(0.02)
+
+
 def readConf(path='config.json') -> AppConfig:
     # handle changed path to config file
     # default location is ./config.json

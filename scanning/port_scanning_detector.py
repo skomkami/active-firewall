@@ -5,7 +5,9 @@ from datetime import datetime
 from functools import reduce
 
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-from config.config import DBConnectionConf, PortScannerModuleConf, Periodicity
+import anomaly_detection
+from anomaly_detection.detect import AnomalyDetector
+from config.config import DBConnectionConf, PortScannerModuleConf, AnomalyDetectorConf, Periodicity
 from database.blocked_hosts_repo import BlockedHostRepo
 from database.port_scanning_repo import PortScanningRepo
 from ip_access_manager.manager import IPAccessManager
@@ -69,6 +71,7 @@ class PortScanningDetector(AbstractAnalysePackets):
         self.stats_repo = None
         self.stats = PortScanningRunningStats.init(datetime.now(), port_scanning_module_conf.periodicity)
         self.ip_manager = IPAccessManager()
+        self.anomaly_detector = AnomalyDetector(AnomalyDetectorConf())
         self.blocks_repo = BlockedHostRepo(db_config)
 
     def init(self):
@@ -78,8 +81,8 @@ class PortScanningDetector(AbstractAnalysePackets):
         return "Port Scanning"
 
     def on_scan_detected(self, scan_from_ip: str):
-        valid = self.stats.check_validity()
-        if not valid:
+        stats_valid = self.stats.check_validity()
+        if not stats_valid:
             mean = self.stats.calc_mean()
             empty_windows = self.stats.forward(datetime.now())
             up_to_now_stats = list(
@@ -91,6 +94,21 @@ class PortScanningDetector(AbstractAnalysePackets):
 
             up_to_now_stats.insert(0, mean)
             self.stats_repo.add_many(up_to_now_stats)
+
+        self.anomaly_detector.update_counter()
+        anomaly_detector_valid = self.anomaly_detector.check_validity()
+        if not anomaly_detector_valid:
+            self.anomaly_detector.reset_counter() 
+
+            # TODO 1. pobierz ostatnie X średnich z bazy danych
+            limit = self.anomaly_detector.maxCounter
+            time_series_training_data = self.stats_repo.get_all(self, limit=limit, order='DESC')
+
+            # TODO 2. podmień w obiekcie anomaly_detector
+            self.anomaly_detector.update_time_series(time_series_training_data)
+
+        # TODO 3. wyznacz anomalię dla tego skanu
+        # ...
 
         packet_stats = PortScanningStats(scan_tries=1)
         self.stats.plus(scan_from_ip, packet_stats)
