@@ -49,6 +49,7 @@ class Services:
 
 class DBConnectionConf:
     host = 'localhost'
+    host_ip = '127.0.0.1'
     user = 'postgres'
     dbname = 'active_firewall'
     password = 'postgres'
