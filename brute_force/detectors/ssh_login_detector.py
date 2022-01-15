@@ -3,14 +3,21 @@ from re import findall
 
 from brute_force.detectors.login_detector import LoginDetector
 from database.detections_repo import DetectionRepo
+from database.bruteforce_repo import BruteForceRepo
 from model.detection import ModuleName
-from config.config import ServiceConfig
+from config.config import ServiceConfig, Periodicity
 
 
 class SSHLoginDetector(LoginDetector):
 
-    def __init__(self, config: ServiceConfig, repo: DetectionRepo):
-        super().__init__(ModuleName.SSH_LOGIN_DETECTOR, config, repo, '%b %d %H:%M:%S')
+    def __init__(
+            self,
+            config: ServiceConfig,
+            repo: DetectionRepo,
+            stats_repo: BruteForceRepo,
+            periodicity: Periodicity
+    ):
+        super().__init__(ModuleName.SSH_LOGIN_DETECTOR, config, repo, stats_repo, '%b %d %H:%M:%S', periodicity)
         self.log_file_path = '/var/log/auth.log'
         self.get_logs_command = "awk '/^{from_date}.*/,/$1>=start/' {file_path} | grep -a 'Failed password for'"
 

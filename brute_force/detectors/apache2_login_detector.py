@@ -3,14 +3,22 @@ from re import findall
 
 from brute_force.detectors.login_detector import LoginDetector
 from database.detections_repo import DetectionRepo
+from database.bruteforce_repo import BruteForceRepo
 from model.detection import ModuleName
-from config.config import ServiceConfig
+from config.config import ServiceConfig, Periodicity
 
 
 class Apache2LoginDetector(LoginDetector):
 
-    def __init__(self, config: ServiceConfig, repo: DetectionRepo):
-        super().__init__(ModuleName.APACHE2_LOGIN_DETECTOR, config, repo, r'%d\/%b\/%Y:%H:%M:%S')
+    def __init__(
+            self,
+            config: ServiceConfig,
+            repo: DetectionRepo,
+            stats_repo: BruteForceRepo,
+            periodicity: Periodicity
+    ):
+        super().__init__(ModuleName.APACHE2_LOGIN_DETECTOR, config, repo, stats_repo, r'%d\/%b\/%Y:%H:%M:%S',
+                         periodicity)
         self.log_file_path = '/var/log/apache2/access.log'
         self.get_logs_command = "awk '/^.*{from_date}.*/,/$1>=start/' {file_path} | grep -a 401"
 

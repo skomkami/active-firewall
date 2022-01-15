@@ -3,6 +3,7 @@ from typing import List
 
 from config.config import DBConnectionConf, BruteForceModuleConf
 from brute_force.detectors.login_detector import LoginDetector
+from database.bruteforce_repo import BruteForceRepo
 from database.detections_repo import DetectionRepo
 from config.config import ServiceConfig
 from brute_force.detectors.ssh_login_detector import SSHLoginDetector
@@ -15,9 +16,14 @@ class BruteForceDetector:
     def __init__(self, db_config: DBConnectionConf, config: BruteForceModuleConf):
         self.db_config = db_config
         self.repo = DetectionRepo(self.db_config)
+        self.stats_repo = None
         self.config = config
+        self.periodicity = self.config.periodicity
         self.delay = 1/self.config.frequency
         self.detectors = self.__get_detectors()
+
+    def init_repo(self):
+        self.stats_repo = BruteForceRepo(self.db_config)
 
     def run(self):
         self.repo = DetectionRepo(self.db_config)
@@ -39,11 +45,11 @@ class BruteForceDetector:
     def __get_single_detector(self, name: str, config: ServiceConfig) -> LoginDetector:
         name = name.lower()
         if name == 'ssh':
-            detector = SSHLoginDetector(config, self.repo)
+            detector = SSHLoginDetector(config, self.repo, self.stats_repo, self.periodicity)
         elif name == 'apache2':
-            detector = Apache2LoginDetector(config, self.repo)
+            detector = Apache2LoginDetector(config, self.repo, self.stats_repo, self.periodicity)
         elif name == 'imappop3':
-            detector = ImapPop3LoginDetector(config, self.repo)
+            detector = ImapPop3LoginDetector(config, self.repo, self.stats_repo, self.periodicity)
         else:
             detector = None
 

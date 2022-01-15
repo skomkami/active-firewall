@@ -18,7 +18,7 @@ CREATE TABLE brute_force_module_stats (
     id SERIAL PRIMARY KEY,
     time_window_start TIMESTAMP NOT NULL,
     time_window_end TIMESTAMP NOT NULL,
-    mean_tries_per_addr REAL
+    mean_attempts_per_addr REAL
 );
 
 CREATE TABLE port_scanning_module_stats (

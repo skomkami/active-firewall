@@ -17,7 +17,7 @@ class DosPersistentStats(PersistentStats):
 
 @dataclass
 class BruteForcePersistentStats(PersistentStats):
-    mean_tries_per_addr: float = 0
+    mean_attempts_per_addr: float = 0
 
 
 @dataclass

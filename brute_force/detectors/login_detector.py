@@ -7,8 +7,11 @@ from subprocess import Popen, PIPE
 from platform import system
 
 from database.detections_repo import DetectionRepo
+from database.bruteforce_repo import BruteForceRepo
+from brute_force.brute_force_stats import BruteForceRunningStats
+from ip_access_manager.manager import IPAccessManager
 from model.detection import Detection
-from config.config import ServiceConfig
+from config.config import ServiceConfig, Periodicity
 from model.detection import ModuleName
 
 
@@ -34,16 +37,28 @@ class IPInfo:
 
 class LoginDetector(ABC):
 
-    def __init__(self, name: ModuleName, config: ServiceConfig, repo: DetectionRepo, timestamp_format: str):
+    def __init__(
+            self,
+            name: ModuleName,
+            config: ServiceConfig,
+            repo: DetectionRepo,
+            stats_repo: BruteForceRepo,
+            timestamp_format: str,
+            periodicity: Periodicity
+    ):
         self.__check_os()
         self.name = name
         self.attempt_limit = config.attemptLimit
         self.repo = repo
+        self.stats_repo = stats_repo
         self.parsed_logs = dict()
         self.timestamp_format = timestamp_format
+        self.stats = BruteForceRunningStats.init(datetime.now(), periodicity)
         self.previous_log_timestamp = self.get_most_recent_log_timestamp()
         self.get_logs_command = None
         self.log_file_path = None
+        self.config_name = self.name.value.rsplit('_', 2)[0].replace('_', '').lower()
+        self.ip_manager = IPAccessManager()
 
     def run(self, repo: DetectionRepo) -> None:
         self.repo = repo
@@ -78,7 +93,7 @@ class LoginDetector(ABC):
                 self.parsed_logs[ip].suspicious_address = True
 
     def add_detection_to_db(self, timestamp: datetime, source_ip: str, attempt_number: int, port: str):
-        if not self.repo:
+        if not self.repo or not self.stats_repo:
             return
         detection = Detection(
             detection_time=timestamp,
