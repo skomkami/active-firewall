@@ -85,8 +85,9 @@ def main(stdscr):
                 else:
                     menus_path.append(current_menu)
                     current_menu = newMenu
+                    #reset row
+                    current_row = 0
             else:
-                log_to_file("wtf: " + str(current_row))
                 current_menu.handle_custom_action(key, current_row, current_page)
 
             current_menu.show(current_row, current_page)

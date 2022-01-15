@@ -16,9 +16,10 @@ class MainMenu(AbstractMenu):
         self.dbConfig = db_config
 
     def handle_action(self, selected_row, selected_page):
-        if selected_row == 0:
+        row = selected_row % len(self.menu_options())
+        if row == 0:
             return TraficMenu(self.stdscr, self.dbConfig)
-        elif selected_row == 1:
+        elif row == 1:
             return BlockedHostsMenu(self.stdscr, self.dbConfig)
         else:
             return None

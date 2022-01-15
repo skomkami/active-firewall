@@ -38,7 +38,7 @@ class BlockedHostRepo(Repo):
             return None
 
     def update_field_for_ip(self, ip: str, field: str, value: str):
-        command = "UPDATE blocked_hosts SET {}={} WHERE ip_address = {}".format(field, value, ip)
+        command = "UPDATE blocked_hosts SET {}={} WHERE ip_address = '{}'".format(field, value, ip)
         cur = self.conn.cursor()
         cur.execute(command)
         cur.close()
