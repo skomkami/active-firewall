@@ -72,10 +72,11 @@ class PortScanningDetector(AbstractAnalysePackets):
         self.stats = PortScanningRunningStats.init(datetime.now(), port_scanning_module_conf.periodicity)
         self.ip_manager = IPAccessManager()
         self.anomaly_detector = AnomalyDetector(AnomalyDetectorConf())
-        self.blocks_repo = BlockedHostRepo(db_config)
+        self.blocks_repo = None
 
     def init(self):
         self.stats_repo = PortScanningRepo(self.db_config)
+        self.blocks_repo = BlockedHostRepo(self.db_config)
 
     def module_name(self):
         return "Port Scanning"
@@ -95,10 +96,16 @@ class PortScanningDetector(AbstractAnalysePackets):
             up_to_now_stats.insert(0, mean)
             self.stats_repo.add_many(up_to_now_stats)
 
+        # increment stats
+        packet_stats = PortScanningStats(scan_tries=1)
+        self.stats.plus(scan_from_ip, packet_stats)
+
+        ip_current_stats = self.stats[scan_from_ip].scan_tries
+
         self.anomaly_detector.update_counter()
         anomaly_detector_valid = self.anomaly_detector.check_validity()
         if not anomaly_detector_valid:
-            self.anomaly_detector.reset_counter() 
+            self.anomaly_detector.reset_counter()
 
             # TODO 1. pobierz ostatnie X średnich z bazy danych
             limit = self.anomaly_detector.maxCounter
@@ -110,8 +117,6 @@ class PortScanningDetector(AbstractAnalysePackets):
         # TODO 3. wyznacz anomalię dla tego skanu
         # ...
 
-        packet_stats = PortScanningStats(scan_tries=1)
-        self.stats.plus(scan_from_ip, packet_stats)
 
     def process_packet(self, packet: Packet):
         try:
