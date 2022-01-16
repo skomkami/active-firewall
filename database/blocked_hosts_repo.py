@@ -16,17 +16,17 @@ class BlockedHostRepo(Repo):
         )
         return command
 
-    def build_get_all_query(self, limit=10, offset=0, where_clause='block_id IS NOT NULL', order='DESC') -> str:
-        command = "SELECT {},block_id FROM blocked_hosts ORDER BY state_since {} LIMIT {} OFFSET {}".format(
-            self.db_fields, order, limit, offset)
+    def build_get_all_query(self, limit, offset, where_clause, order) -> str:
+        command = "SELECT {},id FROM blocked_hosts WHERE {} ORDER BY state_since {} LIMIT {} OFFSET {}".format(
+            self.db_fields, where_clause, order, limit, offset)
         return command
 
     def entity_from_tuple(self, tuple: Tuple) -> BlockedHost:
-        (ip_address, state_since, block_state, note, block_id) = tuple
-        return BlockedHost(ip_address, state_since, BlockState(block_state), note, block_id)
+        (ip_address, state_since, block_state, note, id) = tuple
+        return BlockedHost(ip_address, state_since, BlockState(block_state), note, id)
 
     def get_block_for(self, ip: str):
-        command = "SELECT {},block_id FROM blocked_hosts WHERE ip_address = {}".format(self.db_fields, ip)
+        command = "SELECT {},id FROM blocked_hosts WHERE ip_address = {}".format(self.db_fields, ip)
         cur = self.conn.cursor()
         cur.execute(command)
         content = cur.fetchone()

@@ -5,9 +5,13 @@ from datetime import datetime
 from functools import reduce
 
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-from config.config import DBConnectionConf, DoSModuleConf, Periodicity
+from anomaly_detection.detect import AnomalyDetector
+from config.config import DBConnectionConf, DoSModuleConf, Periodicity, AnomalyDetectorConf
+from database.blocked_hosts_repo import BlockedHostRepo
+from database.detections_repo import DetectionRepo
 from database.dos_repo import DosRepo
 from ip_access_manager.manager import IPAccessManager
+from model.blocked_host import BlockedHost
 from model.detection import Detection, ModuleName
 from model.packet import Packet
 from model.persistent_stats import DosPersistentStats
@@ -37,15 +41,6 @@ class DosRunningStats(RunningStatsAccumulator):
         new_acc = DosRunningStats(since=date, stats_db={}, periodicity=periodicity)
         return new_acc
 
-    # returns false when rules are not exceeded and true when exceeded (dos detected)
-    def check_rules(self, address: str, dos_module_conf: DoSModuleConf) -> bool:
-        stats_for_address = self.stats_db[address]
-        if stats_for_address.packets_no >= dos_module_conf.maxPackets \
-                or stats_for_address.packets_size >= dos_module_conf.maxDataKB * 1000:
-            return True
-        else:
-            return False
-
     def calc_mean(self) -> DosPersistentStats:
         total = len(self.stats_db)
         time_window = TimeWindow(start=self.since, end=self.until())
@@ -71,20 +66,27 @@ class DosAttackDetector(AbstractAnalysePackets):
     are treated as suspicious traffic.
     """
 
-    def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf):
+    def __init__(self, db_config: DBConnectionConf, dos_module_conf: DoSModuleConf, anomaly_config: AnomalyDetectorConf):
         super().__init__(db_config)
         self.stats_repo = None
+        self.detections_repo = None
+        self.blocks_repo = None
         self.config = dos_module_conf
         self.stats = DosRunningStats.init(datetime.now(), dos_module_conf.periodicity)
+        self.anomaly_detector = AnomalyDetector(anomaly_config)
         self.ip_manager = IPAccessManager()
 
     def init(self):
         self.stats_repo = DosRepo(self.db_config)
+        self.blocks_repo = BlockedHostRepo(self.db_config)
+        self.detections_repo = DetectionRepo(self.db_config)
 
     def module_name(self):
         return "Dos attack"
 
     def process_packet(self, packet: Packet):
+        if packet.from_ip in ['localhost', '127.0.0.1']:
+            return
         try:
             now = datetime.now()
             valid = self.stats.check_validity(now)
@@ -103,14 +105,26 @@ class DosAttackDetector(AbstractAnalysePackets):
             packet_stats = DosStats(1, packet.size)
             self.stats.plus(packet.from_ip, packet_stats)
 
-            if self.stats.check_rules(packet.from_ip, self.config):
-                detection = Detection(
-                    detection_time=datetime.now(),
-                    attacker_ip_address=packet.from_ip,
-                    module_name=ModuleName.DOS_MODULE,
-                    note="Attacked port: {}".format(str(packet.to_port))
-                )
-                self.repo.add(detection)
+            self.anomaly_detector.update_counter()
+            anomaly_detector_valid = self.anomaly_detector.check_validity()
+            if not anomaly_detector_valid:
+                self.anomaly_detector.reset_counter()
+
+                # get last X means from database
+                limit = self.anomaly_detector.maxCounter
+                time_series_training_data = self.stats_repo.get_all(limit=limit, order='DESC')
+
+                # update time series in anomaly detector object
+                self.anomaly_detector.update_time_series(time_series_training_data)
+
+            nr_of_packets = self.stats.stats_db[packet.from_ip].scan_tries
+            anomaly = self.anomaly_detector.detect_anomalies(datetime.now(), nr_of_packets)
+            if anomaly:
+                detection = Detection(now, packet.from_ip, ModuleName.DOS_MODULE)
+                self.detections_repo.add(detection)
+                block_host = BlockedHost(packet.from_ip, now)
+                self.blocks_repo.add(block_host)
                 self.ip_manager.block_access_from_ip(packet.from_ip)
+
         except Exception as msg:
             log_to_file("error in dos scan: " + str(msg))

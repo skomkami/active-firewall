@@ -21,7 +21,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
     bruteForceProc = None
     if config.portScannerConf.enabled:
         psConfig = config.portScannerConf
-        detector = PortScanningDetector(config.dbConnectionConf, psConfig)
+        detector = PortScanningDetector(config.dbConnectionConf, psConfig, config.anomalyDetectorConf)
         portScanningDetectionProc = Process(target=detector.run, args=())
         portScanningDetectionProc.start()
     if config.bfModuleConf.enabled:
@@ -29,7 +29,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
         bruteForceProc = Process(target=detector.run, args=())
         bruteForceProc.start()
     if config.dosModuleConf.enabled:
-        detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf)
+        detector = DosAttackDetector(config.dbConnectionConf, config.dosModuleConf, config.anomalyDetectorConf)
         dosModuleProc = Process(target=detector.run, args=())
         dosModuleProc.start()
 
@@ -38,7 +38,7 @@ def runProcesses(config: AppConfig) -> List[Process]:
 
 def terminate_processes(processes: list) -> list:
     for process in processes:
-        if process != None:
+        if process is not None:
             process.terminate()
 
     return processes
@@ -92,7 +92,7 @@ def main(stdscr):
                 else:
                     menus_path.append(current_menu)
                     current_menu = newMenu
-                    #reset row
+                    # reset row
                     current_row = 0
             else:
                 current_menu.handle_custom_action(key, current_row, current_page)

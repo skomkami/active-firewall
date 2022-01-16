@@ -16,4 +16,4 @@ class Detection:
   attacker_ip_address: str
   module_name: ModuleName
   note: str
-  detection_id: int = None
+  id: int = None

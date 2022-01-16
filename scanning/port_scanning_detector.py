@@ -5,10 +5,14 @@ from datetime import datetime
 from functools import reduce
 
 from analysepackets.abstract_analyse_packets import AbstractAnalysePackets
-from config.config import DBConnectionConf, PortScannerModuleConf, Periodicity
+from anomaly_detection.detect import AnomalyDetector
+from config.config import DBConnectionConf, PortScannerModuleConf, AnomalyDetectorConf, Periodicity
 from database.blocked_hosts_repo import BlockedHostRepo
+from database.detections_repo import DetectionRepo
 from database.port_scanning_repo import PortScanningRepo
 from ip_access_manager.manager import IPAccessManager
+from model.blocked_host import BlockedHost
+from model.detection import Detection, ModuleName
 from model.packet import Packet
 from model.persistent_stats import PortScanningPersistentStats
 from model.running_stats import ModuleStats, RunningStatsAccumulator
@@ -35,13 +39,6 @@ class PortScanningRunningStats(RunningStatsAccumulator):
         new_acc = PortScanningRunningStats(since=date, stats_db={}, periodicity=periodicity)
         return new_acc
 
-    # returns false when rules are not exceeded and true when exceeded (PortScanning detected)
-    def check_rules(self, address: str, PortScanningModuleConf: PortScannerModuleConf) -> bool:
-        # if self.no_counter >= PortScanningModuleConf.maxPackets or self.size_counter >= PortScanningModuleConf.maxDataKB * 1000:
-        #     return True
-        # else:
-        return False
-
     def calc_mean(self) -> PortScanningPersistentStats:
         total = len(self.stats_db)
         if total > 0:
@@ -66,23 +63,28 @@ class PortScanningDetector(AbstractAnalysePackets):
     amount with historic data to detect anomalies. High-frequency anomalies are treated as suspicious traffic.
     """
 
-    def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf):
+    def __init__(self, db_config: DBConnectionConf, port_scanning_module_conf: PortScannerModuleConf,
+                 anomaly_config: AnomalyDetectorConf):
         super().__init__(db_config)
         self.config = port_scanning_module_conf
         self.halfscandb = {}
         self.synackdb = {}
         self.stats_repo = None
+        self.detections_repo = None
         self.stats = PortScanningRunningStats.init(datetime.now(), port_scanning_module_conf.periodicity)
         self.ip_manager = IPAccessManager()
-        self.blocks_repo = BlockedHostRepo(db_config)
+        self.anomaly_detector = AnomalyDetector(anomaly_config)
+        self.blocks_repo = None
 
     def init(self):
         self.stats_repo = PortScanningRepo(self.db_config)
+        self.blocks_repo = BlockedHostRepo(self.db_config)
+        self.detections_repo = DetectionRepo(self.db_config)
 
     def module_name(self):
         return "Port Scanning"
 
-    def on_scan_detected(self, scan_from_ip: str):
+    def on_scan_detected(self, scan_from_ip: str, scanned_port):
         now = datetime.now()
         valid = self.stats.check_validity(now)
         if not valid:
@@ -101,6 +103,27 @@ class PortScanningDetector(AbstractAnalysePackets):
         packet_stats = PortScanningStats(scan_tries=1)
         self.stats.plus(scan_from_ip, packet_stats)
 
+        self.anomaly_detector.update_counter()
+        anomaly_detector_valid = self.anomaly_detector.check_validity()
+        if not anomaly_detector_valid:
+            self.anomaly_detector.reset_counter()
+
+            # get last X means from database
+            limit = self.anomaly_detector.maxCounter
+            time_series_training_data = self.stats_repo.get_all(limit=limit, order='DESC')
+
+            # update time series in anomaly detector object
+            self.anomaly_detector.update_time_series(time_series_training_data)
+
+        nr_of_packets = self.stats.stats_db[scan_from_ip].scan_tries
+        anomaly = self.anomaly_detector.detect_anomalies(datetime.now(), nr_of_packets)
+        if anomaly:
+            detection = Detection(now, scan_from_ip, ModuleName.PORTSCANNING_MODULE, "Scanned port {}".format(scanned_port))
+            self.detections_repo.add(detection)
+            block_host = BlockedHost(scan_from_ip, now)
+            self.blocks_repo.add(block_host)
+            self.ip_manager.block_access_from_ip(scan_from_ip)
+
     def process_packet(self, packet: Packet):
         try:
             p_direction = packet.from_ip + "->" + packet.to_ip
@@ -112,16 +135,15 @@ class PortScanningDetector(AbstractAnalysePackets):
                 tmp = p_reverse_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.halfscandb:
                     del self.halfscandb[tmp]
-                    self.on_scan_detected(packet.to_ip)
+                    self.on_scan_detected(packet.to_ip, packet.to_port)
             elif "SYN" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
                 tmp = p_reverse_direction + "_" + str(packet.ack_no)
                 self.synackdb[tmp] = p_direction + "_SYN_ACK_" + str(packet.seq_no) + "_" + str(packet.ack_no)
-                del self.halfscandb[tmp]
             elif "RST" in packet.flags and len(packet.flags) == 1:
                 tmp = p_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.synackdb:
                     del self.synackdb[tmp]
-                    self.on_scan_detected(packet.from_ip)
+                    self.on_scan_detected(packet.from_ip, packet.from_port)
             elif "ACK" in packet.flags and len(packet.flags) == 1:
                 tmp = p_direction + "_" + str(packet.ack_no - 1)
                 if tmp in self.synackdb:

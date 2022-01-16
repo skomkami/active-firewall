@@ -38,5 +38,9 @@
       "unit": "Second",
       "multiplier": 10
     }
+  },
+  "anomalyDetectorConf": {
+    "maxCounter": 200,
+    "outliersFraction": 0.05
   }
 }

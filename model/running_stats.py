@@ -21,7 +21,6 @@ class RunningStatsAccumulator(ABC):
     """
 
     since: datetime
-    # address:str -> ModuleStats TODO typing
     stats_db: dict
     periodicity: Periodicity
 
