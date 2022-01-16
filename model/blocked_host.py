@@ -14,4 +14,4 @@ class BlockedHost:
     state_since: datetime
     state: BlockState = BlockState.BLOCKED
     note: str = None
-    block_id: int = None
+    id: int = None

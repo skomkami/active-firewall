@@ -85,6 +85,8 @@ class DosAttackDetector(AbstractAnalysePackets):
         return "Dos attack"
 
     def process_packet(self, packet: Packet):
+        if packet.from_ip in ['localhost', '127.0.0.1']:
+            return
         try:
             now = datetime.now()
             valid = self.stats.check_validity(now)
@@ -118,7 +120,7 @@ class DosAttackDetector(AbstractAnalysePackets):
             nr_of_packets = self.stats.stats_db[packet.from_ip].scan_tries
             anomaly = self.anomaly_detector.detect_anomalies(datetime.now(), nr_of_packets)
             if anomaly:
-                detection = Detection(now, packet.from_ip, ModuleName.PORTSCANNING_MODULE, "Scanned port {}".format(scanned_port))
+                detection = Detection(now, packet.from_ip, ModuleName.DOS_MODULE)
                 self.detections_repo.add(detection)
                 block_host = BlockedHost(packet.from_ip, now)
                 self.blocks_repo.add(block_host)
