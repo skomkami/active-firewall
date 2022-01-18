@@ -46,6 +46,14 @@ class AnomalyDetector:
 
     def detect_anomalies(self, now: datetime, stats: int) -> bool:
 
+        """
+        we assume, that if the time series loaded from database is empty
+        (no mean values have been measured yet) the anomaly detector is not able
+        to work, so it returns False value
+        """
+        if self.time_series.empty:
+            return False
+
         df = self.time_series.copy()
         df = df.append(pd.DataFrame({'Total': stats}, index=[now]))
 
