@@ -7,7 +7,6 @@ from database.blocked_hosts_repo import BlockedHostRepo
 from ip_access_manager.manager import IPAccessManager
 from menu.abstract_menu import AbstractMenu
 from model.blocked_host import BlockState, BlockedHost
-from utils.log import log_to_file
 
 
 class BlockedHostsMenu(AbstractMenu):
@@ -34,13 +33,11 @@ class BlockedHostsMenu(AbstractMenu):
     def handle_custom_action(self, key, selected_row, selected_page):
         if key == ord('u') and self.selected_block is not None and self.selected_block.state is BlockState.BLOCKED:
             current_ip = self.selected_block.ip_address
-            log_to_file('selected_row with ip: ' + current_ip)
             updated_fields = {'state': BlockState.UNBLOCKED.name, 'state_since': datetime.now()}
             self.blocked_hosts_repo.update_fields_for_ip(current_ip, updated_fields)
             self.ip_manager.allow_access_from_ip(current_ip)
         elif key == ord('b') and self.selected_block is not None and self.selected_block.state is BlockState.UNBLOCKED:
             current_ip = self.selected_block.ip_address
-            log_to_file('selected_row with ip: ' + current_ip)
             updated_fields = {'state': BlockState.BLOCKED.name, 'state_since': datetime.now()}
             self.blocked_hosts_repo.update_fields_for_ip(current_ip, updated_fields)
             self.ip_manager.block_access_from_ip(current_ip)

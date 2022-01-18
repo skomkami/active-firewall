@@ -67,7 +67,7 @@ class PortScanningDetector(AbstractAnalysePackets):
                  anomaly_config: AnomalyDetectorConf):
         super().__init__(db_config)
         self.config = port_scanning_module_conf
-        self.halfscandb = {}
+        self.syndb = {}
         self.synackdb = {}
         self.stats_repo = None
         self.detections_repo = None
@@ -118,31 +118,37 @@ class PortScanningDetector(AbstractAnalysePackets):
         nr_of_packets = self.stats.stats_db[scan_from_ip].scan_tries
         anomaly = self.anomaly_detector.detect_anomalies(datetime.now(), nr_of_packets)
         if anomaly:
-            detection = Detection(now, scan_from_ip, ModuleName.PORTSCANNING_MODULE, "Scanned port {}".format(scanned_port))
+            detection = Detection(now, scan_from_ip, ModuleName.PORTSCANNING_MODULE,
+                                  "Scanned port {}".format(scanned_port))
             self.detections_repo.add(detection)
             block_host = BlockedHost(scan_from_ip, now)
             self.blocks_repo.add(block_host)
             self.ip_manager.block_access_from_ip(scan_from_ip)
 
     def process_packet(self, packet: Packet):
+        if packet.from_ip == packet.to_ip: return
         try:
             p_direction = packet.from_ip + "->" + packet.to_ip
             p_reverse_direction = packet.to_ip + "->" + packet.from_ip
             if "SYN" in packet.flags and packet.ack_no == 0 and len(packet.flags) == 1:
-                self.halfscandb[p_direction + "_" + str(packet.seq_no)] = p_direction + "_SYN_ACK_" + str(
-                    packet.seq_no) + "_" + str(packet.ack_no)
+                self.syndb[p_direction + "_" + str(packet.seq_no)] = p_direction + "_SYN_" + str(packet.seq_no)
             elif "RST" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
                 tmp = p_reverse_direction + "_" + str(packet.ack_no - 1)
-                if tmp in self.halfscandb:
-                    del self.halfscandb[tmp]
+                if tmp in self.syndb:
+                    del self.syndb[tmp]
+                    log_to_file("detected scan on closed port")
                     self.on_scan_detected(packet.to_ip, packet.to_port)
             elif "SYN" in packet.flags and "ACK" in packet.flags and len(packet.flags) == 2:
-                tmp = p_reverse_direction + "_" + str(packet.ack_no)
-                self.synackdb[tmp] = p_direction + "_SYN_ACK_" + str(packet.seq_no) + "_" + str(packet.ack_no)
+                tmp = p_reverse_direction + "_" + str(packet.ack_no - 1)
+                if tmp in self.syndb:
+                    del self.syndb[tmp]
+                    synack_key = p_reverse_direction + "_" + str(packet.ack_no)
+                    self.synackdb[synack_key] = p_direction + "_SYN_ACK_" + str(packet.seq_no) + "_" + str(packet.ack_no)
             elif "RST" in packet.flags and len(packet.flags) == 1:
-                tmp = p_direction + "_" + str(packet.ack_no - 1)
+                tmp = p_direction + "_" + str(packet.seq_no)
                 if tmp in self.synackdb:
                     del self.synackdb[tmp]
+                    log_to_file("detected scan on open port")
                     self.on_scan_detected(packet.from_ip, packet.from_port)
             elif "ACK" in packet.flags and len(packet.flags) == 1:
                 tmp = p_direction + "_" + str(packet.ack_no - 1)
