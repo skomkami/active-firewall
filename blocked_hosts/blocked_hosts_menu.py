@@ -32,7 +32,6 @@ class BlockedHostsMenu(AbstractMenu):
     def handle_custom_action(self, key, selected_row, selected_page):
         if key == ord('u') and self.selected_block is not None and self.selected_block.state is BlockState.BLOCKED:
             current_ip = self.selected_block.ip_address
-            log_to_file('selected_row with ip: ' + current_ip)
             self.blocked_hosts_repo.update_field_for_ip(current_ip, "state", "'{}'".format(BlockState.UNBLOCKED.name))
             self.ip_manager.allow_access_from_ip(current_ip)
 

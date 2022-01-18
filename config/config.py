@@ -61,8 +61,6 @@ class BruteForceModuleConf:
 
 class PortScannerModuleConf:
     enabled = True
-    blockAfterTries = 3
-    lanIp = "127.0.0.1"
     periodicity = Periodicity
 
 
