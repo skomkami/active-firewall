@@ -1,5 +1,5 @@
 CREATE TABLE detections (
-    detection_id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     detection_time TIMESTAMP NOT NULL,
     attacker_ip_address VARCHAR(15) NOT NULL,
     module_name VARCHAR(30) NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE detections (
 );
 
 CREATE TABLE blocked_hosts (
-    block_id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     ip_address VARCHAR(15) NOT NULL,
     state_since TIMESTAMP NOT NULL,
     state VARCHAR(20) NOT NULL,

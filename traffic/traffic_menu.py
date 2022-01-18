@@ -52,7 +52,7 @@ class TrafficMenu(AbstractMenu):
             for idx, detection in enumerate(detections):
                 y = height // 2 - len(detections) // 2 + idx
 
-                self.stdscr.addstr(y, x, str(detection.detection_id))
+                self.stdscr.addstr(y, x, str(detection.id))
                 self.stdscr.addstr(y, address_pos, detection.attacker_ip_address)
                 self.stdscr.addstr(y, timestamp_pos, str(detection.detection_time))
                 self.stdscr.addstr(y, module_name_pos, detection.module_name.name)

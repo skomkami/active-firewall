@@ -66,11 +66,17 @@ class PortScannerModuleConf:
     periodicity = Periodicity
 
 
+class AnomalyDetectorConf:
+    maxCounter = 100
+    outliersFraction = float(0.02)
+
+
 class AppConfig:
     dbConnectionConf = DBConnectionConf()
     dosModuleConf = DoSModuleConf()
     bfModuleConf = BruteForceModuleConf()
     portScannerConf = PortScannerModuleConf()
+    anomalyDetectorConf = AnomalyDetectorConf()
 
 
 def readConf(path='config.json') -> AppConfig:
@@ -97,6 +103,9 @@ def readConf(path='config.json') -> AppConfig:
         "portScannerConf": {
             "py/object": "config.config.PortScannerModuleConf",
             "periodicity": {"py/object": "config.config.Periodicity"}
+        },
+        "anomalyDetectorConf": {
+            "py/object": "config.config.AnomalyDetectorConf",
         }
     }
     try:
