@@ -35,6 +35,11 @@ class BlockedHostsMenu(AbstractMenu):
             log_to_file('selected_row with ip: ' + current_ip)
             self.blocked_hosts_repo.update_field_for_ip(current_ip, "state", "'{}'".format(BlockState.UNBLOCKED.name))
             self.ip_manager.allow_access_from_ip(current_ip)
+        elif key == ord('b') and self.selected_block is not None and self.selected_block.state is BlockState.UNBLOCKED:
+            current_ip = self.selected_block.ip_address
+            log_to_file('selected_row with ip: ' + current_ip)
+            self.blocked_hosts_repo.update_field_for_ip(current_ip, "state", "'{}'".format(BlockState.BLOCKED.name))
+            self.ip_manager.block_access_from_ip(current_ip)
 
     def has_next_page(self):
         return len(self.blocked_hosts_repo.get_all(offset=10 * self.current_page)) >= 10
@@ -82,17 +87,18 @@ class BlockedHostsMenu(AbstractMenu):
             if len(blocked_hosts) >= 10:
                 self.stdscr.addstr(nav_y_pos, x + row_display_width - len(next_page) - 1, next_page)
             self.stdscr.attroff(curses.color_pair(2))
-            if self.selected_block.state is BlockState.BLOCKED:
-                self.custom_menu_options()
+            self.custom_menu_options(self.selected_block.state)
         else:
             no_blocked_str = "No blocked hosts yet"
             self.stdscr.addstr(height // 2, (width - len(no_blocked_str)) // 2, no_blocked_str)
 
-    def custom_menu_options(self):
+    def custom_menu_options(self, state: BlockState):
         h, w = self.stdscr.getmaxyx()
-        unblock_host_string = "UNBLOCK HOST- [U]"
+        custom_option = "UNBLOCK HOST- [U]"
+        if state is BlockState.UNBLOCKED:
+            custom_option = "BLOCK HOST- [B]"
 
-        self.stdscr.addstr(1, w - len(unblock_host_string), unblock_host_string)
+        self.stdscr.addstr(1, w - len(custom_option), custom_option)
 
     def title(self):
         return "Blocked hosts menu"
