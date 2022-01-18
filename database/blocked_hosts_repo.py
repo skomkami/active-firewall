@@ -43,3 +43,7 @@ class BlockedHostRepo(Repo):
         cur.execute(command)
         cur.close()
         self.conn.commit()
+
+    def update_fields_for_ip(self, ip: str, fields: dict):
+        for field, value in fields.items():
+            self.update_field_for_ip(ip, field, f"'{value}'")

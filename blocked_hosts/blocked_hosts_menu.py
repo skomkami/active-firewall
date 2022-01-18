@@ -1,5 +1,7 @@
 import curses
 
+from datetime import datetime
+
 from config.config import DBConnectionConf
 from database.blocked_hosts_repo import BlockedHostRepo
 from ip_access_manager.manager import IPAccessManager
@@ -33,12 +35,14 @@ class BlockedHostsMenu(AbstractMenu):
         if key == ord('u') and self.selected_block is not None and self.selected_block.state is BlockState.BLOCKED:
             current_ip = self.selected_block.ip_address
             log_to_file('selected_row with ip: ' + current_ip)
-            self.blocked_hosts_repo.update_field_for_ip(current_ip, "state", "'{}'".format(BlockState.UNBLOCKED.name))
+            updated_fields = {'state': BlockState.UNBLOCKED.name, 'state_since': datetime.now()}
+            self.blocked_hosts_repo.update_fields_for_ip(current_ip, updated_fields)
             self.ip_manager.allow_access_from_ip(current_ip)
         elif key == ord('b') and self.selected_block is not None and self.selected_block.state is BlockState.UNBLOCKED:
             current_ip = self.selected_block.ip_address
             log_to_file('selected_row with ip: ' + current_ip)
-            self.blocked_hosts_repo.update_field_for_ip(current_ip, "state", "'{}'".format(BlockState.BLOCKED.name))
+            updated_fields = {'state': BlockState.BLOCKED.name, 'state_since': datetime.now()}
+            self.blocked_hosts_repo.update_fields_for_ip(current_ip, updated_fields)
             self.ip_manager.block_access_from_ip(current_ip)
 
     def has_next_page(self):
@@ -94,9 +98,9 @@ class BlockedHostsMenu(AbstractMenu):
 
     def custom_menu_options(self, state: BlockState):
         h, w = self.stdscr.getmaxyx()
-        custom_option = "UNBLOCK HOST- [U]"
+        custom_option = "UNBLOCK HOST - [U]"
         if state is BlockState.UNBLOCKED:
-            custom_option = "BLOCK HOST- [B]"
+            custom_option = "BLOCK HOST - [B]"
 
         self.stdscr.addstr(1, w - len(custom_option), custom_option)
 

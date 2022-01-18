@@ -62,6 +62,9 @@ class AnomalyDetector:
         df['anomaly'] = model.predict(data)
         df_with_anomaly = df.loc[df['anomaly'] == -1, ['Total']]
 
+        if df_with_anomaly.empty:
+            return False
+
         if df_with_anomaly.index[-1] == now:
             if df.iloc[-1]['Total'] > df.iloc[-2]['Total']:
                 return True

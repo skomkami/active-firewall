@@ -18,6 +18,7 @@ from anomaly_detection.detect import AnomalyDetector
 from model.detection import Detection
 from config.config import ServiceConfig, Periodicity
 from model.detection import ModuleName
+from utils.log import log_to_file
 
 
 class ErrorMessages(Enum):
@@ -115,7 +116,7 @@ class LoginDetector(ABC):
             if self.stats_repo:
                 self.add_to_brute_force_stats(ip, login_attempts, now)
 
-            self.try_to_detect_anomaly(ip, now)
+            # self.try_to_detect_anomaly(ip, now)
 
     def add_to_detections_table(self, timestamp: datetime, source_ip: str, attempt_number: int, port: str):
         self.detection = Detection(
@@ -138,6 +139,7 @@ class LoginDetector(ABC):
         login_attempt_stats = BruteForceStats(new_attempts)
         self.stats.plus(source_ip, login_attempt_stats)
 
+
     def try_to_detect_anomaly(self, source_ip: str, now: datetime):
         self.anomaly_detector.update_counter()
         anomaly_detector_valid = self.anomaly_detector.check_validity()
@@ -148,7 +150,9 @@ class LoginDetector(ABC):
             self.anomaly_detector.update_time_series(time_series_training_data)
 
         number_of_attempts = self.stats.stats_db[source_ip].login_attempts
+
         anomaly = self.anomaly_detector.detect_anomalies(now, number_of_attempts)
+
         if anomaly:
             if self.blocked_hosts_repo.get_all(where_clause=f"ip_address='{source_ip}'"):
                 return
