@@ -127,7 +127,6 @@ class LoginDetector(ABC):
         self.detections_repo.add(self.detection)
 
     def add_to_brute_force_stats(self, source_ip: str, new_attempts: int, now: datetime):
-        now = datetime.now()
         valid = self.stats.check_validity(now)
         if not valid:
             mean = self.stats.calc_mean()
@@ -148,9 +147,11 @@ class LoginDetector(ABC):
             time_series_training_data = self.stats_repo.get_all(limit=limit, order='DESC')
             self.anomaly_detector.update_time_series(time_series_training_data)
 
-        number_of_attempts = self.stats.stats_db[source_ip].scan_tries
-        anomaly = self.anomaly_detector.detect_anomalies(datetime.now(), number_of_attempts)
+        number_of_attempts = self.stats.stats_db[source_ip].login_attempts
+        anomaly = self.anomaly_detector.detect_anomalies(now, number_of_attempts)
         if anomaly:
+            if self.blocked_hosts_repo.get_all(where_clause=f"ip_address='{source_ip}'"):
+                return
             block_host = BlockedHost(source_ip, now)
             self.blocked_hosts_repo.add(block_host)
             self.ip_manager.block_access_from_ip(source_ip)
