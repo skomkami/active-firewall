@@ -5,6 +5,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import IsolationForest
 
 from config.config import AnomalyDetectorConf
+from model.persistent_stats import DosPersistentStats, BruteForcePersistentStats, PortScanningPersistentStats
+
 from utils.log import log_to_file
 
 
@@ -31,8 +33,15 @@ class AnomalyDetector:
         timestamps = []
         values = []
         for e in entities:
+            if isinstance(e, DosPersistentStats):
+                values.append(e.mean_packets_per_addr)
+            elif isinstance(e, BruteForcePersistentStats):
+                values.append(e.mean_attempts_per_addr)
+            elif isinstance(e, PortScanningPersistentStats):
+                values.append(e.mean_scans_per_addr)
+            else:
+                continue
             timestamps.append(e.time_window.end)
-            values.append(e.mean_scans_per_addr)
         self.time_series = pd.DataFrame(values, index=timestamps, columns=['Total'])
 
     def detect_anomalies(self, now: datetime, stats: int) -> bool:
@@ -52,6 +61,9 @@ class AnomalyDetector:
         # get anomalies
         df['anomaly'] = model.predict(data)
         df_with_anomaly = df.loc[df['anomaly'] == -1, ['Total']]
+
+        if df_with_anomaly.empty:
+            return False
 
         if df_with_anomaly.index[-1] == now:
             if df.iloc[-1]['Total'] > df.iloc[-2]['Total']:

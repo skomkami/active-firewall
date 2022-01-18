@@ -9,12 +9,16 @@ from os.path import exists
 
 from database.detections_repo import DetectionRepo
 from database.bruteforce_repo import BruteForceRepo
+from database.blocked_hosts_repo import BlockedHostRepo
 from brute_force.brute_force_stats import BruteForceRunningStats, BruteForceStats
 from model.persistent_stats import BruteForcePersistentStats
+from model.blocked_host import BlockedHost
 from ip_access_manager.manager import IPAccessManager
+from anomaly_detection.detect import AnomalyDetector
 from model.detection import Detection
 from config.config import ServiceConfig, Periodicity
 from model.detection import ModuleName
+from utils.log import log_to_file
 
 
 class ErrorMessages(Enum):
@@ -52,8 +56,8 @@ class LoginDetector(ABC):
             self,
             name: ModuleName,
             config: ServiceConfig,
-            repo: DetectionRepo,
-            stats_repo: BruteForceRepo,
+            detections_repo: DetectionRepo,
+            anomaly_detector: AnomalyDetector,
             timestamp_format: str,
             periodicity: Periodicity
     ):
@@ -61,8 +65,9 @@ class LoginDetector(ABC):
         self.name = name
         self.attempt_limit = config.attemptLimit
         self.enabled = config.enabled
-        self.repo = repo
-        self.stats_repo = stats_repo
+        self.detections_repo = detections_repo
+        self.stats_repo = None
+        self.blocked_hosts_repo = None
         self.parsed_logs = dict()
         self.timestamp_format = timestamp_format
         self.stats = BruteForceRunningStats.init(datetime.now(), periodicity)
@@ -71,12 +76,15 @@ class LoginDetector(ABC):
         self.log_file_path = None
         self.config_name = self.name.value.rsplit('_', 2)[0].replace('_', '').lower()
         self.ip_manager = IPAccessManager()
+        self.anomaly_detector = anomaly_detector
+        self.detection = None
 
-    def run(self, repo: DetectionRepo, stats_repo: BruteForceRepo) -> None:
+    def run(self, repo: DetectionRepo, stats_repo: BruteForceRepo, blocked_hosts_repo: BlockedHostRepo) -> None:
         if not self.enabled or not exists(self.log_file_path):
             return
-        self.repo = repo
+        self.detections_repo = repo
         self.stats_repo = stats_repo
+        self.blocked_hosts_repo = blocked_hosts_repo
         command = self.get_logs_command.format(from_date=self.previous_log_timestamp, file_path=self.log_file_path)
         response = self.run_terminal_command(command)
         logs = response.split('\n')
@@ -90,6 +98,7 @@ class LoginDetector(ABC):
 
     def parse_logs(self, logs: list) -> None:
         for log in logs:
+            now = datetime.now()
             ip = self.get_ip(log)
             if not ip:
                 continue
@@ -102,27 +111,23 @@ class LoginDetector(ABC):
             self.parsed_logs[ip].timestamps.append(timestamp)
             self.parsed_logs[ip].ports_attempted.add(port)
 
-            if self.repo:
+            if self.detections_repo:
                 self.add_to_detections_table(timestamp, ip, self.parsed_logs[ip].attempts_number, port)
             if self.stats_repo:
-                self.add_to_brute_force_stats(ip, login_attempts)
+                self.add_to_brute_force_stats(ip, login_attempts, now)
 
-            # If attempts number per addres reached limit then ip should be blocked.
-            if self.parsed_logs[ip].attempts_number >= self.attempt_limit:
-                self.parsed_logs[ip].suspicious_address = True
-                self.ip_manager.block_access_from_ip(ip)
+            # self.try_to_detect_anomaly(ip, now)
 
     def add_to_detections_table(self, timestamp: datetime, source_ip: str, attempt_number: int, port: str):
-        detection = Detection(
+        self.detection = Detection(
             detection_time=timestamp,
             attacker_ip_address=source_ip,
             module_name=self.name,
             note=f'Attacked port: {port}, attempt number: {attempt_number}'
         )
-        self.repo.add(detection)
+        self.detections_repo.add(self.detection)
 
-    def add_to_brute_force_stats(self, source_ip: str, new_attempts: int):
-        now = datetime.now()
+    def add_to_brute_force_stats(self, source_ip: str, new_attempts: int, now: datetime):
         valid = self.stats.check_validity(now)
         if not valid:
             mean = self.stats.calc_mean()
@@ -134,8 +139,29 @@ class LoginDetector(ABC):
         login_attempt_stats = BruteForceStats(new_attempts)
         self.stats.plus(source_ip, login_attempt_stats)
 
+
+    def try_to_detect_anomaly(self, source_ip: str, now: datetime):
+        self.anomaly_detector.update_counter()
+        anomaly_detector_valid = self.anomaly_detector.check_validity()
+        if not anomaly_detector_valid:
+            self.anomaly_detector.reset_counter()
+            limit = self.anomaly_detector.maxCounter
+            time_series_training_data = self.stats_repo.get_all(limit=limit, order='DESC')
+            self.anomaly_detector.update_time_series(time_series_training_data)
+
+        number_of_attempts = self.stats.stats_db[source_ip].login_attempts
+
+        anomaly = self.anomaly_detector.detect_anomalies(now, number_of_attempts)
+
+        if anomaly:
+            if self.blocked_hosts_repo.get_all(where_clause=f"ip_address='{source_ip}'"):
+                return
+            block_host = BlockedHost(source_ip, now)
+            self.blocked_hosts_repo.add(block_host)
+            self.ip_manager.block_access_from_ip(source_ip)
+
     def get_most_recent_log_timestamp(self):
-        latest_log = self.repo.get_all(1, 0, f"module_name='{self.name.value}'", 'DESC')
+        latest_log = self.detections_repo.get_all(1, 0, f"module_name='{self.name.value}'", 'DESC')
         if not latest_log:
             return ''
         return latest_log[0].detection_time.strftime(self.timestamp_format)
