@@ -116,7 +116,7 @@ class LoginDetector(ABC):
             if self.stats_repo:
                 self.add_to_brute_force_stats(ip, login_attempts, now)
 
-            # self.try_to_detect_anomaly(ip, now)
+            self.try_to_detect_anomaly(ip, now)
 
     def add_to_detections_table(self, timestamp: datetime, source_ip: str, attempt_number: int, port: str):
         self.detection = Detection(
