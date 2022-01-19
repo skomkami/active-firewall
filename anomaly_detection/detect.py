@@ -44,7 +44,7 @@ class AnomalyDetector:
             timestamps.append(e.time_window.end)
         self.time_series = pd.DataFrame(values, index=timestamps, columns=['Total'])
 
-    def detect_anomalies(self, now: datetime, stats: int) -> bool:
+    def detect_anomalies(self, now: datetime, stats: float) -> bool:
 
         """
         we assume, that if the time series loaded from database is empty
