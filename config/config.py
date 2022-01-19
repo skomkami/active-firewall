@@ -46,10 +46,9 @@ class DBConnectionConf:
     password = 'postgres'
     port = 5432
 
+
 class DoSModuleConf:
     enabled = True
-    maxPackets = 1000
-    maxDataKB = 1000
     periodicity = Periodicity()
 
 
